@@ -74,6 +74,18 @@ app.get('/api/categorie', (req, res) => {
     });
 });
 
+app.get('/api/accessori/:id_prodotto', (req, res) => {
+    const idProdotto = req.params.id_prodotto;
+    connection.query('SELECT id, nome, prezzo FROM prodotti WHERE id_prodotto = ?;',[idProdotto], (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
 app.listen(3000, () => {
     console.log('Server avviato su http://localhost:3000');
 });
