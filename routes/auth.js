@@ -12,7 +12,7 @@ router.post('/login', (req, res) => {
         return res.status(400).json({ error: 'Email e password sono obbligatorie' });
     }
 
-    connection.query('SELECT utenti.id, credenziali.nome_utente AS username, credenziali.password_utente AS password, utenti.id_ruolo FROM credenziali INNER JOIN utenti ON utenti.id = credenziali.id_utente WHERE credenziali.nome_utente = ?', [nome_utente], async (error, results, fields) => {
+    connection.query('SELECT utenti.id, credenziali.nome_utente AS username, credenziali.password_utente AS password, utenti.id_ruolo FROM credenziali INNER JOIN utenti ON utenti.id = credenziali.id_utente WHERE credenziali.nome_utente = ?', [username], async (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante l\'autenticazione'});
