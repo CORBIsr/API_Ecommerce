@@ -6,10 +6,12 @@ app.use(express.json());
 const publicRoutes = require('./routes/publicCalls');
 const userRoutes = require('./routes/userCalls');
 const adminRoutes = require('./routes/adminCalls');
+const authRoutes = require('./routes/auth');
 
 app.use('/api/public', publicRoutes);
 app.use('/api/utente', userRoutes);
 app.use('api/adm/', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 app.listen(3000, () => {
     console.log('Server avviato su http://localhost:3000');
