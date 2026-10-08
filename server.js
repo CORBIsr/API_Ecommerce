@@ -8,9 +8,12 @@ const userRoutes = require('./routes/userCalls');
 const adminRoutes = require('./routes/adminCalls');
 const authRoutes = require('./routes/auth');
 
+const tokenVerifier = require('./middleware/auth')
+const adminRole = require('./middleware/roles')
+
 app.use('/api/public', publicRoutes);
-app.use('/api/utente', userRoutes);
-app.use('api/adm/', adminRoutes);
+app.use('/api/utente', tokenVerifier, userRoutes);
+app.use('api/adm/', tokenVerifier, adminRole, adminRoutes);
 app.use('/api/auth', authRoutes);
 
 app.listen(3000, () => {
