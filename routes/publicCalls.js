@@ -7,13 +7,13 @@ router.get('/prodotti', (req, res) => {
     const idCategoria = req.query.id_categoria;
     if(idCategoria){
         connection.query('SELECT p.id, p.nome, p.descrizione, p.prezzo, ( SELECT immagini_prodotti.path_immagine FROM immagini_prodotti WHERE immagini_prodotti.id_prodotti = p.id LIMIT 1 ) AS immagine FROM prodotti p WHERE p.id_prodotto IS NULL AND p.id_categoria = ?',[idCategoria], (error, results, fields) => {
-        if (error) {
-        console.error('Errore durante l\'esecuzione della query:', error);
-        res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-        } else {
-        res.json(results);
-        }
-    });
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+            } else {
+                res.json(results);
+            }
+        });
     }else{
         connection.query('SELECT p.id, p.nome, p.descrizione, p.prezzo, ( SELECT immagini_prodotti.path_immagine FROM immagini_prodotti WHERE immagini_prodotti.id_prodotti = p.id LIMIT 1 ) AS immagine FROM prodotti p WHERE p.id_prodotto IS NULL;', (error, results, fields) => {
             if (error) {
