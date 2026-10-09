@@ -12,8 +12,8 @@ const tokenVerifier = require('./middleware/auth')
 const adminRole = require('./middleware/roles')
 
 app.use('/api/public', publicRoutes);
-app.use('/api/utente', tokenVerifier, userRoutes);
-app.use('api/adm/', tokenVerifier, adminRole, adminRoutes);
+app.use('/api/user', tokenVerifier, userRoutes);
+app.use('/api/adm', tokenVerifier, adminRole, adminRoutes);
 app.use('/api/auth', authRoutes);
 
 app.listen(3000, () => {
