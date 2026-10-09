@@ -3,7 +3,7 @@ function adminRole(req, res, next) {
         return res.status(401).json({ error: 'Utente non autenticato' });
     }
     
-    const ADMIN_ROLE = 2;
+    const ADMIN_ROLE = 1;
 
     if (req.utente.ruolo !== ADMIN_ROLE) {
         return res.status(403).json({ error: 'Accesso negato: privilegi di amministratore richiesti' });
