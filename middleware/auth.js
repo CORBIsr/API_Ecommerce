@@ -9,11 +9,11 @@ function tokenVerifier(req, res, next) {
         return res.status(401).json({ errore: 'Accesso negato: token mancante' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, datiDecodificati) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
             return res.status(403).json({ errore: 'Token non valido o scaduto' });
         }
-        req.utente = datiDecodificati;
+        req.user = decoded; // { ID, username, role }
         next();
     });
 }
