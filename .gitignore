@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 .turbo
 chiamateAPI.txt
 test-auth.js
+ecommerce.sql
