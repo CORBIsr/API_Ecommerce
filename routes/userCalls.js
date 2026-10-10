@@ -3,10 +3,12 @@ const router = express.Router();
 
 const connection = require('../config/db');
 
-router.get('/', (req, res) => {
-    const userID = req.utente.id;
+//#region user
 
-    connection.query('SELECT nome, cognome FROM utenti WHERE id = ?', [userID], (error, results, fields) => {
+router.get('/', (req, res) => {
+    const userID = req.user.ID;
+
+    connection.query('SELECT name, surname FROM users WHERE ID = ?', [userID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -17,10 +19,23 @@ router.get('/', (req, res) => {
 
 });
 
-router.get('/cart', (req, res) => {
-    const userID = req.utente.id;
+//#endregion
 
-    connection.query('SELECT dettagli_carrello.id_prodotto AS id, dettagli_carrello.quantita_prodotto AS quantita, prodotti.id_prodotto FROM dettagli_carrello INNER JOIN prodotti ON dettagli_carrello.id_prodotto = prodotti.id INNER JOIN carrelli ON dettagli_carrello.id_carrello = carrelli.id WHERE carrelli.id_utente = ?', [userID], (error, results, fields) => {
+//#region cart
+
+router.get('/cart', (req, res) => {
+    const userID = req.user.ID;
+
+    connection.query(`
+        SELECT 
+            cart_details.productID AS id,
+            cart_details.qty AS quantity,
+            products.productID AS fatherID
+        FROM cart_details
+        INNER JOIN products ON cart_details.productID = products.ID
+        INNER JOIN carts ON cart_details.cartID = carts.ID
+        WHERE carts.userID = ?
+    `, [userID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -29,21 +44,21 @@ router.get('/cart', (req, res) => {
             var index = {}
 
             results.forEach(p => {
-                if (p.id_prodotto === null) {
+                if (p.fatherID === null) {
                     const prod = {
                         id: p.id,
-                        quantita: p.quantita,
-                        accessori: []
+                        quantity: p.quantity,
+                        accessories: []
                     }
                     index[p.id] = prod;
                     cart.push(prod);
                 }
             });
             results.forEach(a => {
-                if (a.id_prodotto !== null) {
-                    index[a.id_prodotto].accessori.push({
-                        id_accessorio: a.id,
-                        quantita: a.quantita
+                if (a.fatherID !== null) {
+                    index[a.fatherID].accessories.push({
+                        accessoryID: a.id,
+                        quantity: a.quantity
                     })
                 }
             })
@@ -54,106 +69,25 @@ router.get('/cart', (req, res) => {
 
 });
 
-router.get('/orders', (req, res) => {
-    const userID = req.utente.id;
+router.post('/cart', (req, res) => {
+    const userID = req.user.ID;
+    const { productID, quantity } = req.body;
 
-    connection.query(`
-            SELECT 	ordini.id, 
-                ordini.data_ordine, 
-                stati_ordine.status_ordine AS status, 
-                CONCAT(indirizzi.via, ', ', indirizzi.localita, ', ', indirizzi.comune, ', ', indirizzi.provincia, ', ', indirizzi.stato) AS indirizzo,
-                SUM(dettagli_ordine.quantita_prodotto) AS numero_prodotti,
-                SUM(dettagli_ordine.prezzo_prodotto) AS costo_prodotti,
-                ordini.costo_consegna
-            FROM ordini
-            INNER JOIN stati_ordine ON ordini.id_status = stati_ordine.id
-            INNER JOIN indirizzi ON ordini.id_indirizzo = indirizzi.id
-            INNER JOIN dettagli_ordine ON ordini.id = dettagli_ordine.id_ordine
-            INNER JOIN utenti ON ordini.id_utente = utenti.id
-            WHERE utenti.id = ?
-            GROUP BY ordini.id
-            ORDER BY stati_ordine.id, ordini.data_ordine DESC;
-        `, [userID], (error, results, fields) => {
-        if (error) {
-            console.error('Errore durante l\'esecuzione della query:', error);
-            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-        } else {
-            res.json(results);
-        }
-    });
-
-});
-
-router.get('/orders/:orderID', (req, res) => {
-    const userID = req.utente.id;
-    const ordineID = req.params.orderID
-
-    connection.query(`
-            SELECT 	ordini.id, 
-                ordini.data_ordine, 
-                stati_ordine.status_ordine AS status, 
-                CONCAT(indirizzi.via, ', ', indirizzi.localita, ', ', indirizzi.comune, ', ', indirizzi.provincia, ', ', indirizzi.stato) AS indirizzo,
-                SUM(dettagli_ordine.quantita_prodotto) AS numero_prodotti,
-                SUM(dettagli_ordine.prezzo_prodotto) AS costo_prodotti,
-                ordini.costo_consegna
-            FROM ordini
-            INNER JOIN stati_ordine ON ordini.id_status = stati_ordine.id
-            INNER JOIN indirizzi ON ordini.id_indirizzo = indirizzi.id
-            INNER JOIN dettagli_ordine ON ordini.id = dettagli_ordine.id_ordine
-            INNER JOIN utenti ON ordini.id_utente = utenti.id
-            WHERE 
-                utenti.id = ${userID} AND ordini.id = ${ordineID}
-            GROUP BY ordini.id
-            ORDER BY stati_ordine.id, ordini.data_ordine DESC;
-        `, (error, results, fields) => {
-        if (error) {
-            console.error('Errore durante l\'esecuzione della query:', error);
-            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-        } else {
-            res.json(results);
-        }
-    });
-
-});
-
-router.get('/addresses', (req, res) => {
-    const userID = req.utente.id;
-
-    connection.query('SELECT id, via, localita, comune, provincia, stato FROM indirizzi WHERE id_utente = ?;', [userID], (error, results, fields) => {
-        if (error) {
-            console.error('Errore durante l\'esecuzione della query:', error);
-            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-        } else {
-            res.json(results);
-        }
-    });
-
-});
-
-// POST /api/user/carrello
-// Body: { id_prodotto: int, quantita: int }
-// Aggiunge un prodotto al carrello dell'utente autenticato.
-// Se l'utente non ha ancora un carrello lo crea; se il prodotto è già presente aggiorna la quantità.
-router.post('/carrello', (req, res) => {
-    const userID = req.utente.id;
-    const { id_prodotto, quantita } = req.body;
-
-    if (!id_prodotto || !quantita || quantita < 1) {
+    if (!productID || !quantity || quantity < 1) {
         return res.status(400).json({ error: 'id_prodotto e quantita (>= 1) sono obbligatori' });
     }
 
     // Cerca il carrello dell'utente o lo crea
-    connection.query('SELECT id FROM carrelli WHERE id_utente = ?', [userID], (error, results) => {
+    connection.query('SELECT ID FROM carts WHERE userID = ?', [userID], (error, results) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             return res.status(500).json({ error: 'Errore durante il recupero del carrello' });
         }
 
-        const inserisciNelCarrello = (id_carrello) => {
-            // Se il prodotto è già nel carrello aggiorna la quantità, altrimenti inserisce
+        const insert = (cartID) => {
             connection.query(
-                'SELECT id, quantita_prodotto FROM dettagli_carrello WHERE id_carrello = ? AND id_prodotto = ?',
-                [id_carrello, id_prodotto],
+                'SELECT ID, qty FROM cart_details WHERE cartID = ? AND productID = ?',
+                [cartID, productID],
                 (error, existing) => {
                     if (error) {
                         console.error('Errore durante l\'esecuzione della query:', error);
@@ -161,10 +95,10 @@ router.post('/carrello', (req, res) => {
                     }
 
                     if (existing.length > 0) {
-                        const nuovaQuantita = existing[0].quantita_prodotto + quantita;
+                        const new_quantity = existing[0].qty + quantity;
                         connection.query(
-                            'UPDATE dettagli_carrello SET quantita_prodotto = ? WHERE id = ?',
-                            [nuovaQuantita, existing[0].id],
+                            'UPDATE cart_details SET qty = ? WHERE ID = ?',
+                            [new_quantity, existing[0].ID],
                             (error) => {
                                 if (error) {
                                     console.error('Errore durante l\'esecuzione della query:', error);
@@ -175,8 +109,8 @@ router.post('/carrello', (req, res) => {
                         );
                     } else {
                         connection.query(
-                            'INSERT INTO dettagli_carrello (id_carrello, id_prodotto, quantita_prodotto) VALUES (?, ?, ?)',
-                            [id_carrello, id_prodotto, quantita],
+                            'INSERT INTO cart_details (cartID, productID, qty) VALUES (?, ?, ?)',
+                            [cartID, productID, quantity],
                             (error) => {
                                 if (error) {
                                     console.error('Errore durante l\'esecuzione della query:', error);
@@ -191,35 +125,99 @@ router.post('/carrello', (req, res) => {
         };
 
         if (results.length > 0) {
-            inserisciNelCarrello(results[0].id);
+            insert(results[0].ID);
         } else {
             // Crea il carrello per l'utente
-            connection.query('INSERT INTO carrelli (id_utente) VALUES (?)', [userID], (error, result) => {
+            connection.query('INSERT INTO carts (userID) VALUES (?)', [userID], (error, result) => {
                 if (error) {
                     console.error('Errore durante l\'esecuzione della query:', error);
                     return res.status(500).json({ error: 'Errore durante la creazione del carrello' });
                 }
-                inserisciNelCarrello(result.insertId);
+                insert(result.insertId);
             });
         }
     });
 });
 
-// POST /api/user/ordini
-// Body: { id_indirizzo: int, costo_consegna: int }
-// Crea un nuovo ordine con i prodotti presenti nel carrello dell'utente e svuota il carrello.
-router.post('/ordini', (req, res) => {
-    const userID = req.utente.id;
-    const { id_indirizzo, costo_consegna } = req.body;
+//#endregion
 
-    if (!id_indirizzo || costo_consegna === undefined) {
+//#region orders
+
+router.get('/orders', (req, res) => {
+    const userID = req.user.ID;
+
+    connection.query(`
+        SELECT
+            orders.ID,
+            orders.date,
+            order_status.status,
+            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
+            SUM(order_datails.qty) AS n_product,
+            SUM(order_datails.price) AS total_price,
+            orders.shipping_fee
+        FROM orders
+        INNER JOIN order_status ON orders.statusID = order_status.ID
+        INNER JOIN addresses ON orders.addressID = addresses.ID
+        INNER JOIN order_datails ON orders.ID = order_datails.orderID
+        INNER JOIN users ON orders.userID = users.ID
+        WHERE users.ID = ?
+        GROUP BY orders.ID
+        ORDER BY order_status.ID, orders.date DESC;
+    `, [userID], (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
+        }
+    });
+
+});
+
+router.get('/orders/:orderID', (req, res) => {
+    const userID = req.user.ID;
+    const ordineID = req.params.orderID;
+
+    connection.query(`
+        SELECT
+            orders.ID,
+            orders.date,
+            order_status.status,
+            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
+            SUM(order_datails.qty) AS n_product,
+            SUM(order_datails.price) AS total_price,
+            orders.shipping_fee
+        FROM orders
+        INNER JOIN order_status ON orders.statusID = order_status.ID
+        INNER JOIN addresses ON orders.addressID = addresses.ID
+        INNER JOIN order_datails ON orders.ID = order_datails.orderID
+        INNER JOIN users ON orders.userID = users.ID
+        WHERE users.ID = ? AND orders.ID = ?
+        GROUP BY orders.ID
+        ORDER BY order_status.ID, orders.date DESC;
+    `, [userID, ordineID], (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
+        }
+    });
+
+});
+
+router.post('/orders', (req, res) => {
+    const userID = req.user.ID;
+    const { addressID, shipping_fee } = req.body;
+
+    if (!addressID || shipping_fee === undefined) {
         return res.status(400).json({ error: 'id_indirizzo e costo_consegna sono obbligatori' });
     }
 
     // Verifica che l'indirizzo appartenga all'utente
     connection.query(
-        'SELECT id FROM indirizzi WHERE id = ? AND id_utente = ?',
-        [id_indirizzo, userID],
+        'SELECT ID FROM addresses WHERE ID = ? AND userID = ?',
+        [addressID, userID],
         (error, addrResults) => {
             if (error) {
                 console.error('Errore durante l\'esecuzione della query:', error);
@@ -230,7 +228,7 @@ router.post('/ordini', (req, res) => {
             }
 
             // Recupera il carrello dell'utente
-            connection.query('SELECT id FROM carrelli WHERE id_utente = ?', [userID], (error, cartResults) => {
+            connection.query('SELECT ID FROM carts WHERE userID = ?', [userID], (error, cartResults) => {
                 if (error) {
                     console.error('Errore durante l\'esecuzione della query:', error);
                     return res.status(500).json({ error: 'Errore durante il recupero del carrello' });
@@ -239,12 +237,15 @@ router.post('/ordini', (req, res) => {
                     return res.status(404).json({ error: 'Carrello non trovato' });
                 }
 
-                const id_carrello = cartResults[0].id;
+                const cartID = cartResults[0].ID;
 
                 // Recupera i prodotti nel carrello con il loro prezzo
                 connection.query(
-                    'SELECT dettagli_carrello.id_prodotto, dettagli_carrello.quantita_prodotto, prodotti.prezzo FROM dettagli_carrello INNER JOIN prodotti ON dettagli_carrello.id_prodotto = prodotti.id WHERE dettagli_carrello.id_carrello = ?',
-                    [id_carrello],
+                    `SELECT cart_details.productID, cart_details.qty, products.price
+                     FROM cart_details
+                     INNER JOIN products ON cart_details.productID = products.ID
+                     WHERE cart_details.cartID = ?`,
+                    [cartID],
                     (error, items) => {
                         if (error) {
                             console.error('Errore durante l\'esecuzione della query:', error);
@@ -254,31 +255,31 @@ router.post('/ordini', (req, res) => {
                             return res.status(400).json({ error: 'Il carrello è vuoto' });
                         }
 
-                        const data_ordine = new Date().toISOString().split('T')[0];
+                        const date = new Date().toISOString().split('T')[0];
 
-                        // Crea l'ordine (status 1 = "In attesa di conferma")
+                        // Crea l'ordine (statusID 1 = "In attesa di conferma")
                         connection.query(
-                            'INSERT INTO ordini (id_utente, id_status, costo_consegna, data_ordine, id_indirizzo) VALUES (?, 1, ?, ?, ?)',
-                            [userID, costo_consegna, data_ordine, id_indirizzo],
+                            'INSERT INTO orders (userID, statusID, shipping_fee, date, addressID) VALUES (?, 1, ?, ?, ?)',
+                            [userID, shipping_fee, date, addressID],
                             (error, orderResult) => {
                                 if (error) {
                                     console.error('Errore durante l\'esecuzione della query:', error);
                                     return res.status(500).json({ error: 'Errore durante la creazione dell\'ordine' });
                                 }
 
-                                const id_ordine = orderResult.insertId;
+                                const orderID = orderResult.insertId;
 
                                 // Inserisce i dettagli dell'ordine
-                                const dettagli = items.map(item => [
-                                    item.id_prodotto,
-                                    item.quantita_prodotto,
-                                    id_ordine,
-                                    item.prezzo
+                                const details = items.map(item => [
+                                    item.productID,
+                                    item.qty,
+                                    orderID,
+                                    item.price
                                 ]);
 
                                 connection.query(
-                                    'INSERT INTO dettagli_ordine (id_prodotto, quantita_prodotto, id_ordine, prezzo_prodotto) VALUES ?',
-                                    [dettagli],
+                                    'INSERT INTO order_datails (productID, qty, orderID, price) VALUES ?',
+                                    [details],
                                     (error) => {
                                         if (error) {
                                             console.error('Errore durante l\'esecuzione della query:', error);
@@ -287,14 +288,14 @@ router.post('/ordini', (req, res) => {
 
                                         // Svuota il carrello dopo aver creato l'ordine
                                         connection.query(
-                                            'DELETE FROM dettagli_carrello WHERE id_carrello = ?',
-                                            [id_carrello],
+                                            'DELETE FROM cart_details WHERE cartID = ?',
+                                            [cartID],
                                             (error) => {
                                                 if (error) {
                                                     console.error('Errore durante l\'esecuzione della query:', error);
                                                     return res.status(500).json({ error: 'Errore durante lo svuotamento del carrello' });
                                                 }
-                                                res.status(201).json({ message: 'Ordine creato con successo', id_ordine });
+                                                res.status(201).json({ message: 'Ordine creato con successo', orderID });
                                             }
                                         );
                                     }
@@ -308,24 +309,39 @@ router.post('/ordini', (req, res) => {
     );
 });
 
-// POST /api/user/indirizzi
-// Body: { via, localita, comune, provincia, stato }
-// Aggiunge un nuovo indirizzo di spedizione per l'utente autenticato.
-router.post('/indirizzi', (req, res) => {
-    const userID = req.utente.id;
-    const { via, localita, comune, provincia, stato } = req.body;
+//#endregion
 
-    if (!via || !localita || !comune || !provincia || !stato) {
-        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: via, localita, comune, provincia, stato' });
+//#region addresses
+
+router.get('/addresses', (req, res) => {
+    const userID = req.user.ID;
+
+    connection.query('SELECT ID, street, locality, zip_code, city, province, state FROM addresses WHERE userID = ?;', [userID], (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
+        }
+    });
+
+});
+
+router.post('/addresses', (req, res) => {
+    const userID = req.user.ID;
+    const { street, locality, zip_code, city, province, state } = req.body;
+
+    if (!street || !locality || !city || !province || !state) {
+        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: street, locality, city, province, state' });
     }
 
-    if (provincia.length !== 2) {
-        return res.status(400).json({ error: 'La provincia deve essere un codice di 2 caratteri (es. PR)' });
+    if (province.length !== 2) {
+        return res.status(400).json({ error: 'La province deve essere un codice di 2 caratteri (es. PR)' });
     }
 
     connection.query(
-        'INSERT INTO indirizzi (via, localita, comune, provincia, stato, id_utente) VALUES (?, ?, ?, ?, ?, ?)',
-        [via, localita, comune, provincia, stato, userID],
+        'INSERT INTO addresses (street, locality, zip_code, city, province, state, userID) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [street, locality, zip_code || 0, city, province, state, userID],
         (error, result) => {
             if (error) {
                 console.error('Errore durante l\'esecuzione della query:', error);
@@ -335,5 +351,7 @@ router.post('/indirizzi', (req, res) => {
         }
     );
 });
+
+//#endregion
 
 module.exports = router;
