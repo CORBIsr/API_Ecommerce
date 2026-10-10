@@ -3,10 +3,17 @@ const router = express.Router();
 
 const connection = require('../config/db');
 
-router.get('/prodotti', (req, res) => {
-    const idCategoria = req.query.id_categoria;
-    if(idCategoria){
-        connection.query('SELECT p.id, p.nome, p.descrizione, p.prezzo, ( SELECT immagini_prodotti.path_immagine FROM immagini_prodotti WHERE immagini_prodotti.id_prodotti = p.id LIMIT 1 ) AS immagine FROM prodotti p WHERE p.id_prodotto IS NULL AND p.id_categoria = ?',[idCategoria], (error, results, fields) => {
+//#region products
+
+router.get('/products', (req, res) => {
+    const categoryID = req.query.categoryID;
+    if (categoryID) {
+        connection.query(`
+            SELECT p.ID, p.name, p.description, p.price,
+                ( SELECT products_images.image_path FROM products_images WHERE products_images.productID = p.ID LIMIT 1 ) AS image
+            FROM products p
+            WHERE p.productID IS NULL AND p.categoryID = ?
+        `, [categoryID], (error, results, fields) => {
             if (error) {
                 console.error('Errore durante l\'esecuzione della query:', error);
                 res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -14,41 +21,52 @@ router.get('/prodotti', (req, res) => {
                 res.json(results);
             }
         });
-    }else{
-        connection.query('SELECT p.id, p.nome, p.descrizione, p.prezzo, ( SELECT immagini_prodotti.path_immagine FROM immagini_prodotti WHERE immagini_prodotti.id_prodotti = p.id LIMIT 1 ) AS immagine FROM prodotti p WHERE p.id_prodotto IS NULL;', (error, results, fields) => {
+    } else {
+        connection.query(`
+            SELECT p.ID, p.name, p.description, p.price,
+                ( SELECT products_images.image_path FROM products_images WHERE products_images.productID = p.ID LIMIT 1 ) AS image
+            FROM products p
+            WHERE p.productID IS NULL;
+        `, (error, results, fields) => {
             if (error) {
-              console.error('Errore durante l\'esecuzione della query:', error);
-              res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+                console.error('Errore durante l\'esecuzione della query:', error);
+                res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
             } else {
-              res.json(results);
+                res.json(results);
             }
         });
     }
 });
 
-router.get('/prodotti/:id_prodotto', (req, res) => {
-    const idProdotto = req.params.id_prodotto;
-    connection.query('SELECT prodotti.id, prodotti.nome, prodotti.descrizione, immagini_prodotti.path_immagine AS immagine FROM prodotti INNER JOIN immagini_prodotti ON immagini_prodotti.id_prodotti = prodotti.id WHERE prodotti.id = ?;',[idProdotto], (error, results, fields) => {
+router.get('/products/:productID', (req, res) => {
+    const productID = req.params.productID;
+    connection.query(`
+        SELECT products.ID, products.name, products.description, products_images.image_path AS image
+        FROM products
+        INNER JOIN products_images ON products_images.productID = products.ID
+        WHERE products.ID = ?;
+    `, [productID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
-            var prodotto = {
-                id: results[0].id,
-                nome: results[0].nome,
-                descrizione: results[0].descrizione,
-                immagini: []
+            var prod = {
+                id: results[0].ID,
+                name: results[0].name,
+                description: results[0].description,
+                images: []
             }
             results.forEach(result => {
-                prodotto.immagini.push(result.immagine)
+                prod.images.push(result.image)
             });
-            res.json(prodotto);
+            res.json(prod);
         }
     });
 });
 
-router.get('/categorie', (req, res) => {
-    connection.query('SELECT categorie.id, categorie.categoria, immagini_categorie.path_immagine AS immagine FROM categorie INNER JOIN immagini_categorie ON immagini_categorie.id_categoria = categorie.id;', (error, results, fields) => {
+router.get('/accessories/:productID', (req, res) => {
+    const productID = req.params.productID;
+    connection.query('SELECT ID, name, price FROM products WHERE productID = ?;', [productID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -58,9 +76,16 @@ router.get('/categorie', (req, res) => {
     });
 });
 
-router.get('/accessori/:id_prodotto', (req, res) => {
-    const idProdotto = req.params.id_prodotto;
-    connection.query('SELECT id, nome, prezzo FROM prodotti WHERE id_prodotto = ?;',[idProdotto], (error, results, fields) => {
+//#endregion
+
+//#region categories
+
+router.get('/categories', (req, res) => {
+    connection.query(`
+        SELECT categories.ID, categories.category, category_images.image_path AS image
+        FROM categories
+        INNER JOIN category_images ON category_images.categoryID = categories.ID;
+    `, (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -69,5 +94,7 @@ router.get('/accessori/:id_prodotto', (req, res) => {
         }
     });
 });
+
+//#endregion
 
 module.exports = router;
