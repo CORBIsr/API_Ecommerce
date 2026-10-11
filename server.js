@@ -15,10 +15,10 @@ const authRoutes = require('./routes/auth');
 const tokenVerifier = require('./middleware/auth')
 const adminRole = require('./middleware/roles')
 
-app.use('/public', publicRoutes);
-app.use('/user', tokenVerifier, userRoutes);
-app.use('/adm', tokenVerifier, adminRole, adminRoutes);
-app.use('/auth', authRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/user', tokenVerifier, userRoutes);
+app.use('/api/adm', tokenVerifier, adminRole, adminRoutes);
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
