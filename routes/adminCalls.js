@@ -130,11 +130,30 @@ router.get('/orders', (req, res) => {
 
 });
 
+router.delete('/orders/:orderID', (req, res) => {
+    const orderID = req.params.orderID;
+
+    connection.query(
+        'UPDATE orders SET statusID = 6 WHERE ID = ?',
+        [orderID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'aggiornamento dello stato dell\'ordine' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Ordine non trovato' });
+            }
+            res.json({ message: 'Ordine annullato con successo', statusID: 6 });
+        }
+    );
+});
+
 //#endregion
 
 //#region products
 
-router.post('/product', (req, res) => {
+router.post('/products', (req, res) => {
     const { name, description, price, categoryID, image_path } = req.body;
 
     if (!name || price === undefined) {
@@ -171,11 +190,30 @@ router.post('/product', (req, res) => {
     );
 });
 
+router.delete('/products/:productID', (req, res) => {
+    const productID = req.params.productID;
+
+    connection.query(
+        'UPDATE products SET active = 0 WHERE ID = ?',
+        [productID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante la disattivazione del prodotto' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Prodotto non trovato' });
+            }
+            res.json({ message: 'Prodotto disattivato con successo' });
+        }
+    );
+});
+
 //#endregion
 
 //#region categories
 
-router.post('/category', (req, res) => {
+router.post('/categories', (req, res) => {
     const { category, image_path } = req.body;
 
     if (!category) {

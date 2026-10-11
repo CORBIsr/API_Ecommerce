@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
 
 //#region cart
 
-router.get('/cart', (req, res) => {
+router.get('/carts', (req, res) => {
     const userID = req.user.ID;
 
     connection.query(`
@@ -69,7 +69,7 @@ router.get('/cart', (req, res) => {
 
 });
 
-router.post('/cart', (req, res) => {
+router.post('/carts', (req, res) => {
     const userID = req.user.ID;
     const { productID, quantity } = req.body;
 
@@ -316,7 +316,7 @@ router.post('/orders', (req, res) => {
 router.get('/addresses', (req, res) => {
     const userID = req.user.ID;
 
-    connection.query('SELECT ID, street, locality, zip_code, city, province, state FROM addresses WHERE userID = ?;', [userID], (error, results, fields) => {
+    connection.query('SELECT ID, street, locality, zip_code, city, province, state FROM addresses WHERE userID = ? AND active = 1;', [userID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -348,6 +348,26 @@ router.post('/addresses', (req, res) => {
                 return res.status(500).json({ error: 'Errore durante il salvataggio dell\'indirizzo' });
             }
             res.status(201).json({ message: 'Indirizzo aggiunto con successo', id: result.insertId });
+        }
+    );
+});
+
+router.delete('/addresses/:addressID', (req, res) => {
+    const userID = req.user.ID;
+    const addressID = req.params.addressID;
+
+    connection.query(
+        'UPDATE addresses SET active = 0 WHERE ID = ? AND userID = ?',
+        [addressID, userID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante la disattivazione dell\'indirizzo' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Indirizzo non trovato o non autorizzato' });
+            }
+            res.json({ message: 'Indirizzo disattivato con successo' });
         }
     );
 });
