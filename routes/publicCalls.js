@@ -1,55 +1,45 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 
 const connection = require('../config/db');
 
 //#region products
 
-router.get('/products', (req, res) => {
+router.get('/products', (req, res) => { //  /products?categoryID=1
     const categoryID = req.query.categoryID;
-    if (categoryID) {
-        connection.query(`
-            SELECT p.ID, p.name, p.description, p.price,
-                ( SELECT products_images.image_path FROM products_images WHERE products_images.productID = p.ID LIMIT 1 ) AS image
-            FROM products p
-            WHERE p.productID IS NULL AND p.categoryID = ?
-        `, [categoryID], (error, results, fields) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-            } else {
-                res.json(results);
-            }
-        });
-    } else {
-        connection.query(`
-            SELECT p.ID, p.name, p.description, p.price,
-                ( SELECT products_images.image_path FROM products_images WHERE products_images.productID = p.ID LIMIT 1 ) AS image
-            FROM products p
-            WHERE p.productID IS NULL;
-        `, (error, results, fields) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-            } else {
-                res.json(results);
-            }
-        });
-    }
+    let sql = `
+        SELECT 
+            products.ID, products.name, products.description, products.price,
+            ( SELECT products_images.image_path FROM products_images WHERE products_images.productID = products.ID LIMIT 1 ) AS image
+        FROM products
+        WHERE products.productID IS NULL AND products.active = 1 ${categoryID ? `AND products.categoryID = ${categoryID}` : ""}`
+    connection.query(sql, (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
+        }
+    });
 });
 
 router.get('/products/:productID', (req, res) => {
     const productID = req.params.productID;
     connection.query(`
-        SELECT products.ID, products.name, products.description, products_images.image_path AS image
+        SELECT
+            products.ID, products.name, products.description, products_images.image_path AS image
         FROM products
-        INNER JOIN products_images ON products_images.productID = products.ID
-        WHERE products.ID = ?;
+            INNER JOIN products_images ON products_images.productID = products.ID
+        WHERE products.ID = ? AND products.active = 1;
     `, [productID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
+            if (results.length === 0) {
+                return res.status(404).json({ error: 'Prodotto non trovato' });
+            }
             var prod = {
                 id: results[0].ID,
                 name: results[0].name,
@@ -66,7 +56,11 @@ router.get('/products/:productID', (req, res) => {
 
 router.get('/accessories/:productID', (req, res) => {
     const productID = req.params.productID;
-    connection.query('SELECT ID, name, price FROM products WHERE productID = ?;', [productID], (error, results, fields) => {
+    connection.query(`
+        SELECT
+            ID, name, price 
+        FROM products
+        WHERE productID = ?;`, [productID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
@@ -82,15 +76,87 @@ router.get('/accessories/:productID', (req, res) => {
 
 router.get('/categories', (req, res) => {
     connection.query(`
-        SELECT categories.ID, categories.category, category_images.image_path AS image
+        SELECT 
+            categories.ID, categories.category, category_images.image_path AS image
         FROM categories
-        INNER JOIN category_images ON category_images.categoryID = categories.ID;
-    `, (error, results, fields) => {
+            INNER JOIN category_images ON category_images.categoryID = categories.ID;`, (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
             res.json(results);
+        }
+    });
+});
+
+//#endregion
+
+//#region users
+
+router.post('/user', async (req, res) => {
+    const { name, surname, username, password } = req.body;
+
+    if (!name || !surname || !username || !password) {
+        return res.status(400).json({ error: 'name, surname, username e password sono obbligatori' });
+    }
+
+    connection.query('SELECT ID FROM credentials WHERE username = ?', [username], async (error, existing) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            return res.status(500).json({ error: 'Errore durante la verifica dello username' });
+        }
+        if (existing.length > 0) {
+            return res.status(409).json({ error: 'Username già in uso' });
+        }
+
+        try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            connection.beginTransaction((err) => {
+                if (err) {
+                    console.error('Errore avvio transazione:', err);
+                    return res.status(500).json({ error: 'Errore interno del server' });
+                }
+
+                connection.query('INSERT INTO users (name, surname) VALUES (?, ?)', [name, surname], (error, userResult) => {
+                    if (error) {
+                        return connection.rollback(() => {
+                            console.error('Errore durante la creazione dell\'utente:', error);
+                            res.status(500).json({ error: 'Errore durante la creazione dell\'utente' });
+                        });
+                    }
+
+                    const newUserID = userResult.insertId;
+
+                    connection.query(
+                        'INSERT INTO credentials (username, password, userID) VALUES (?, ?, ?)',
+                        [username, hashedPassword, newUserID],
+                        (error) => {
+                            if (error) {
+                                return connection.rollback(() => {
+                                    console.error('Errore durante il salvataggio delle credenziali:', error);
+                                    res.status(500).json({ error: 'Errore durante il salvataggio delle credenziali' });
+                                });
+                            }
+
+                            connection.commit((err) => {
+                                if (err) {
+                                    return connection.rollback(() => {
+                                        console.error('Errore durante il commit della transazione:', err);
+                                        res.status(500).json({ error: 'Errore durante la conferma dei dati' });
+                                    });
+                                }
+
+                                res.status(201).json({ message: 'Utente registrato con successo', userID: newUserID });
+                            });
+                        }
+                    );
+                });
+            });
+
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Errore durante la cifratura della password' });
         }
     });
 });
