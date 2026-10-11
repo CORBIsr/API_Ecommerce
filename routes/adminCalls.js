@@ -132,4 +132,86 @@ router.get('/orders', (req, res) => {
 
 //#endregion
 
+//#region products
+
+router.post('/product', (req, res) => {
+    const { name, description, price, categoryID, image_path } = req.body;
+
+    if (!name || price === undefined) {
+        return res.status(400).json({ error: 'name e price sono obbligatori' });
+    }
+
+    connection.query(
+        'INSERT INTO products (name, description, price, categoryID) VALUES (?, ?, ?, ?)',
+        [name, description || null, price, categoryID || null],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'inserimento del prodotto' });
+            }
+
+            const productID = result.insertId;
+
+            if (image_path) {
+                connection.query(
+                    'INSERT INTO products_images (image_path, productID) VALUES (?, ?)',
+                    [image_path, productID],
+                    (error) => {
+                        if (error) {
+                            console.error('Errore durante l\'esecuzione della query:', error);
+                            return res.status(500).json({ error: 'Prodotto creato ma errore nel salvataggio dell\'immagine' });
+                        }
+                        res.status(201).json({ message: 'Prodotto creato con successo', productID });
+                    }
+                );
+            } else {
+                res.status(201).json({ message: 'Prodotto creato con successo', productID });
+            }
+        }
+    );
+});
+
+//#endregion
+
+//#region categories
+
+router.post('/category', (req, res) => {
+    const { category, image_path } = req.body;
+
+    if (!category) {
+        return res.status(400).json({ error: 'category è obbligatorio' });
+    }
+
+    connection.query(
+        'INSERT INTO categories (category) VALUES (?)',
+        [category],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'inserimento della categoria' });
+            }
+
+            const categoryID = result.insertId;
+
+            if (image_path) {
+                connection.query(
+                    'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
+                    [image_path, categoryID],
+                    (error) => {
+                        if (error) {
+                            console.error('Errore durante l\'esecuzione della query:', error);
+                            return res.status(500).json({ error: 'Categoria creata ma errore nel salvataggio dell\'immagine' });
+                        }
+                        res.status(201).json({ message: 'Categoria creata con successo', categoryID });
+                    }
+                );
+            } else {
+                res.status(201).json({ message: 'Categoria creata con successo', categoryID });
+            }
+        }
+    );
+});
+
+//#endregion
+
 module.exports = router;
