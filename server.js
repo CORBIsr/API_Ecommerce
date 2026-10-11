@@ -14,10 +14,10 @@ const authRoutes = require('./routes/auth');
 const tokenVerifier = require('./middleware/auth')
 const adminRole = require('./middleware/roles')
 
-app.use('/api/public', publicRoutes);
-app.use('/api/user', tokenVerifier, userRoutes);
-app.use('/api/adm', tokenVerifier, adminRole, adminRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/public', publicRoutes);
+app.use('/user', tokenVerifier, userRoutes);
+app.use('/adm', tokenVerifier, adminRole, adminRoutes);
+app.use('/auth', authRoutes);
 
 app.listen(3000, () => {
     console.log('Server avviato su http://localhost:3000');
