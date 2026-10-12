@@ -102,6 +102,7 @@ router.get('/orders', (req, res) => {
 
     var query = `
         SELECT
+            orders.userID,
             orders.ID,
             orders.date,
             order_status.status,
