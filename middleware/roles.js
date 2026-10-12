@@ -1,13 +1,22 @@
-function adminRole(req, res, next) {
-    if (!req.user) {
-        return res.status(401).json({ error: 'Utente non autenticato' });
-    }
-    
-    const ADMIN_ROLE = 1;
+function isInRole(...roles) {
+    return function (req, res, next) {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Utente non autenticato' });
+        }
 
-    if (req.user.role !== ADMIN_ROLE) {
-        return res.status(403).json({ error: 'Accesso negato: privilegi di amministratore richiesti' });
-    }
-    next();
+        const numericRoles = roles.map(Number);
+        const userRole = Number(req.user.role);
+
+        const hasRole = numericRoles.includes(userRole);
+        req.isInRole = hasRole;
+        req.isOwner = userRole === +process.env.OWNER_ROLE;
+        req.isAdmin = userRole === +process.env.ADMIN_ROLE;
+
+        if (!hasRole) {
+            return res.status(403).json({ error: 'Accesso negato: ruolo non autorizzato' });
+        }
+
+        next();
+    };
 }
-module.exports = adminRole;
+module.exports = isInRole;

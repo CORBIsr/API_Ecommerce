@@ -13,11 +13,11 @@ const adminRoutes = require('./routes/adminCalls');
 const authRoutes = require('./routes/auth');
 
 const tokenVerifier = require('./middleware/auth')
-const adminRole = require('./middleware/roles')
+const isInRole = require('./middleware/roles');
 
 app.use('/api/public', publicRoutes);
 app.use('/api/user', tokenVerifier, userRoutes);
-app.use('/api/adm', tokenVerifier, adminRole, adminRoutes);
+app.use('/api/adm', tokenVerifier, isInRole(+process.env.ADMIN_ROLE, +process.env.OWNER_ROLE), adminRoutes);
 app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
