@@ -81,7 +81,7 @@ router.delete('/user/:userID', (req, res) => {
 
 router.get('/roles', (req, res) => {
 
-    connection.query(`SELECT ID, role FROM roles ${!req.inOwner ? "WHERE ID IN (2,3)" : ""}`, (error, results, fields) => {
+    connection.query(`SELECT ID, role FROM roles ${!req.isOwner ? "WHERE ID IN (2, 3)" : ""}`, (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
