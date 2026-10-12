@@ -19,6 +19,9 @@ router.get('/products', (req, res) => { //  /products?categoryID=1
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
+            results.forEach(prod => {
+                prod.image = `https://internopuro.alwaysdata.net/img/prods/${prod.image}`;
+            });
             res.json(results);
         }
     });
@@ -47,7 +50,7 @@ router.get('/products/:productID', (req, res) => {
                 images: []
             }
             results.forEach(result => {
-                prod.images.push(result.image)
+                prod.images.push(`https://internopuro.alwaysdata.net/img/prods/${result.image}`)
             });
             res.json(prod);
         }
@@ -84,6 +87,9 @@ router.get('/categories', (req, res) => {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
+            results.forEach(cat => {
+                cat.image = `https://internopuro.alwaysdata.net/img/cats/${cat.image}`
+            });
             res.json(results);
         }
     });
