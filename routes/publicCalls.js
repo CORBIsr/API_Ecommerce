@@ -44,7 +44,7 @@ router.get('/products/:productID', (req, res) => {
                 return res.status(404).json({ error: 'Prodotto non trovato' });
             }
             var prod = {
-                id: results[0].ID,
+                ID: results[0].ID,
                 name: results[0].name,
                 description: results[0].description,
                 images: []
