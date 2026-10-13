@@ -46,6 +46,7 @@ router.get('/products/:productID', (req, res) => {
             var prod = {
                 ID: results[0].ID,
                 name: results[0].name,
+                price: results[0].price,
                 description: results[0].description,
                 images: []
             }
