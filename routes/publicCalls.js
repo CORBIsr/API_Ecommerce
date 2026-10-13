@@ -31,7 +31,7 @@ router.get('/products/:productID', (req, res) => {
     const productID = req.params.productID;
     connection.query(`
         SELECT
-            products.ID, products.name, products.description, products_images.image_path AS image
+            products.ID, products.name, products.description, products.price, products_images.image_path AS image
         FROM products
             INNER JOIN products_images ON products_images.productID = products.ID
         WHERE products.ID = ? AND products.active = 1;
