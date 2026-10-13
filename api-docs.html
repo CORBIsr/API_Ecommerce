@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentazione API - Ecommerce</title>
+    <style>
+        :root {
+            --bg-body: #090d16;
+            --bg-sidebar: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-header: #172033;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+
+            /* HTTP Badges */
+            --get-color: #22c55e;
+            --get-bg: rgba(34, 197, 94, 0.15);
+            --post-color: #38bdf8;
+            --post-bg: rgba(56, 189, 248, 0.15);
+            --delete-color: #ef4444;
+            --delete-bg: rgba(239, 68, 68, 0.15);
+            --put-color: #f59e0b;
+            --put-bg: rgba(245, 158, 11, 0.15);
+
+            /* Role Badges */
+            --role-owner: #a855f7;
+            --role-admin: #3b82f6;
+            --role-user: #10b981;
+            --role-public: #64748b;
+
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        aside {
+            width: 290px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        aside::-webkit-scrollbar {
+            width: 6px;
+        }
+        aside::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 9px 12px;
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .nav-group {
+            margin-bottom: 16px;
+        }
+
+        .nav-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            padding-left: 6px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            transition: all 0.15s;
+        }
+
+        .nav-links a:hover {
+            background: #1e293b;
+            color: #fff;
+        }
+
+        .nav-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 4px;
+            min-width: 44px;
+            text-align: center;
+        }
+
+        /* MAIN CONTENT */
+        main {
+            flex: 1;
+            padding: 36px 48px;
+            max-width: 1100px;
+            overflow-y: auto;
+        }
+
+        header.docs-header {
+            margin-bottom: 36px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .docs-header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .docs-header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            max-width: 800px;
+        }
+
+        .base-info-box {
+            display: flex;
+            gap: 16px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .info-pill {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-pill strong {
+            color: var(--accent);
+        }
+        .info-pill code {
+            font-family: monospace;
+            color: #f1f5f9;
+        }
+
+        /* SECTIONS */
+        .api-category {
+            margin-bottom: 56px;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+        }
+
+        /* API CARDS */
+        .api-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            overflow: hidden;
+            scroll-margin-top: 30px;
+        }
+
+        .api-card-header {
+            background: var(--bg-card-header);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .endpoint-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .method-badge {
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .method-GET { background: var(--get-bg); color: var(--get-color); border: 1px solid var(--get-color); }
+        .method-POST { background: var(--post-bg); color: var(--post-color); border: 1px solid var(--post-color); }
+        .method-DELETE { background: var(--delete-bg); color: var(--delete-color); border: 1px solid var(--delete-color); }
+        .method-PUT { background: var(--put-bg); color: var(--put-color); border: 1px solid var(--put-color); }
+
+        .endpoint-path {
+            font-family: monospace;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .endpoint-path .param {
+            color: var(--accent);
+        }
+
+        .meta-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .role-pill {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 999px;
+            letter-spacing: 0.5px;
+        }
+        .role-public { background: #334155; color: #cbd5e1; }
+        .role-user { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .role-admin { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .role-owner { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+        .api-card-body {
+            padding: 20px;
+        }
+
+        .endpoint-summary {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .callout-box {
+            background: rgba(56, 189, 248, 0.08);
+            border-left: 4px solid var(--accent);
+            padding: 10px 14px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            font-size: 0.85rem;
+            color: #bae6fd;
+            margin-bottom: 18px;
+        }
+        .callout-box strong {
+            color: #fff;
+        }
+
+        .callout-owner {
+            background: rgba(168, 85, 247, 0.08);
+            border-left-color: var(--role-owner);
+            color: #e9d5ff;
+        }
+
+        /* TABLES */
+        .params-section {
+            margin-bottom: 20px;
+        }
+
+        .params-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        table.param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            background: #090d16;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        table.param-table th, table.param-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table.param-table th {
+            background: #131b2e;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        table.param-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .field-name {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .field-type {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        .badge-required {
+            color: #ef4444;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .badge-optional {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            margin-left: 4px;
+        }
+
+        /* CODE BLOCKS */
+        .code-container {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111827;
+            padding: 6px 12px;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        pre {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 6px 6px;
+            padding: 12px;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: #e2e8f0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        .btn-copy {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.2s;
+        }
+        .btn-copy:hover {
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            aside {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            main {
+                padding: 24px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR NAVIGAZIONE -->
+    <aside>
+        <a href="#" class="brand">
+            ⚡ API Ecommerce Docs
+        </a>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Cerca endpoint (es. /users, POST)...">
+        </div>
+
+        <nav>
+            <div class="nav-group">
+                <div class="nav-title">Autenticazione</div>
+                <ul class="nav-links">
+                    <li><a href="#auth-login"><span class="nav-badge method-POST">POST</span> /auth/login</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-title">Rotte Pubbliche</div>
+                <ul class="nav-links">
+                    <li><a href="#pub-products"><span class="nav-badge method-GET">GET</span> /public/products</a></li>
+                    <li><a href="#pub-product-id"><span class="nav-badge method-GET">GET</span> /public/products/:id</a></li>
+                    <li><a href="#pub-accessories"><span class="nav-badge method-GET">GET</span> /public/accessories/:id</a></li>
+                    <li><a href="#pub-categories"><span class="nav-badge method-GET">GET</span> /public/categories</a></li>
+                    <li><a href="#pub-register"><span class="nav-badge method-POST">POST</span> /public/user</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-title">Utente Loggato</div>
+                <ul class="nav-links">
+                    <li><a href="#user-profile"><span class="nav-badge method-GET">GET</span> /user/</a></li>
+                    <li><a href="#user-get-cart"><span class="nav-badge method-GET">GET</span> /user/carts</a></li>
+                    <li><a href="#user-add-cart"><span class="nav-badge method-POST">POST</span> /user/carts</a></li>
+                    <li><a href="#user-get-orders"><span class="nav-badge method-GET">GET</span> /user/orders</a></li>
+                    <li><a href="#user-get-order-id"><span class="nav-badge method-GET">GET</span> /user/orders/:id</a></li>
+                    <li><a href="#user-create-order"><span class="nav-badge method-POST">POST</span> /user/orders</a></li>
+                    <li><a href="#user-get-addr"><span class="nav-badge method-GET">GET</span> /user/addresses</a></li>
+                    <li><a href="#user-add-addr"><span class="nav-badge method-POST">POST</span> /user/addresses</a></li>
+                    <li><a href="#user-del-addr"><span class="nav-badge method-DELETE">DELETE</span> /user/addresses/:id</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-title">Admin & Owner</div>
+                <ul class="nav-links">
+                    <li><a href="#adm-get-users"><span class="nav-badge method-GET">GET</span> /adm/users</a></li>
+                    <li><a href="#adm-get-user-id"><span class="nav-badge method-GET">GET</span> /adm/users/:id</a></li>
+                    <li><a href="#adm-del-user"><span class="nav-badge method-DELETE">DELETE</span> /adm/user/:id</a></li>
+                    <li><a href="#adm-get-roles"><span class="nav-badge method-GET">GET</span> /adm/roles</a></li>
+                    <li><a href="#adm-get-orders"><span class="nav-badge method-GET">GET</span> /adm/orders</a></li>
+                    <li><a href="#adm-del-order"><span class="nav-badge method-DELETE">DELETE</span> /adm/orders/:id</a></li>
+                    <li><a href="#adm-add-prod"><span class="nav-badge method-POST">POST</span> /adm/products</a></li>
+                    <li><a href="#adm-del-prod"><span class="nav-badge method-DELETE">DELETE</span> /adm/products/:id</a></li>
+                    <li><a href="#adm-add-cat"><span class="nav-badge method-POST">POST</span> /adm/categories</a></li>
+                </ul>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- CONTENUTO PRINCIPALE -->
+    <main>
+        <header class="docs-header">
+            <h1>Documentazione Ufficiale API Ecommerce</h1>
+            <p>Guida completa a tutte le chiamate disponibili nel backend Node.js / Express, inclusi parametri URL, query string, JSON body di richiesta, autorizzazioni e risposte previste.</p>
+            
+            <div class="base-info-box">
+                <div class="info-pill">
+                    <strong>Localhost:</strong> <code>http://localhost:3000/api</code>
+                </div>
+                <div class="info-pill">
+                    <strong>Remote:</strong> <code>http://internopuro.alwaysdata.net/api</code>
+                </div>
+                <div class="info-pill">
+                    <strong>Auth Header:</strong> <code>Authorization: Bearer &lt;JWT_TOKEN&gt;</code>
+                </div>
+            </div>
+        </header>
+
+        <!-- SEZIONE 1: AUTENTICAZIONE -->
+        <section class="api-category">
+            <h2 class="category-title">🔐 Autenticazione</h2>
+            <p class="category-desc">Generazione del token JWT necessario per autenticare le richieste protette.</p>
+
+            <!-- POST /api/auth/login -->
+            <article class="api-card" id="auth-login">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/auth/login</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-public">Pubblica</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Effettua il login verificando username e password hashata su database. Restituisce il token JWT (valido 8 ore).</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto (Content-Type: application/json)</div>
+                        <table class="param-table">
+                            <thead>
+                                <tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="field-name">username</span> <span class="badge-required">*</span></td>
+                                    <td><span class="field-type">string</span></td>
+                                    <td>Nome utente dell'account (es. <code>jacopocorbani</code>)</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="field-name">password</span> <span class="badge-required">*</span></td>
+                                    <td><span class="field-type">string</span></td>
+                                    <td>Password in chiaro che verrà confrontata con il bcrypt hash</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span>Esempio Body Richiesta</span>
+                            <button class="btn-copy" onclick="copySnippet(this)">Copia</button>
+                        </div>
+                        <pre><code>{
+  "username": "jacopocorbani",
+  "password": "password123"
+}</code></pre>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span>Risposta 200 OK</span>
+                        </div>
+                        <pre><code>{
+  "message": "Login effettuato con successo",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "username": "jacopocorbani"
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <!-- SEZIONE 2: ROTTE PUBBLICHE -->
+        <section class="api-category">
+            <h2 class="category-title">🌐 Rotte Pubbliche (/api/public)</h2>
+            <p class="category-desc">Accessibili da chiunque senza fornire alcun token di autenticazione.</p>
+
+            <!-- GET /api/public/products -->
+            <article class="api-card" id="pub-products">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/public/products</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-public">Pubblica</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce la lista di tutti i prodotti principali attivi (escludendo varianti o accessori).</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Query Parameters (Opzionali)</div>
+                        <table class="param-table">
+                            <thead>
+                                <tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td>
+                                    <td><span class="field-type">number</span></td>
+                                    <td>Filtra i prodotti per specifica categoria (es. <code>?categoryID=1</code>)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 1,
+    "name": "Tavolo Legno",
+    "description": "Tavolo in quercia massiccia",
+    "price": 299.99,
+    "image": "https://internopuro.alwaysdata.net/img/prods/tavolo.jpg"
+  }
+]</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/public/products/:productID -->
+            <article class="api-card" id="pub-product-id">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/public/products/<span class="param">:productID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-public">Pubblica</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce i dettagli del singolo prodotto con l'array completo di tutte le sue immagini collegate.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead>
+                                <tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="field-name">productID</span> <span class="badge-required">*</span></td>
+                                    <td><span class="field-type">number</span></td>
+                                    <td>Identificativo univoco del prodotto (es. <code>1</code>)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "ID": 1,
+  "name": "Tavolo Legno",
+  "description": "Tavolo in quercia massiccia",
+  "images": [
+    "https://internopuro.alwaysdata.net/img/prods/tavolo_1.jpg",
+    "https://internopuro.alwaysdata.net/img/prods/tavolo_2.jpg"
+  ]
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/public/accessories/:productID -->
+            <article class="api-card" id="pub-accessories">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/public/accessories/<span class="param">:productID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-public">Pubblica</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce gli accessori collegati ad un prodotto padre.</p>
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="field-name">productID</span> <span class="badge-required">*</span></td>
+                                    <td><span class="field-type">number</span></td>
+                                    <td>ID del prodotto principale</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/public/categories -->
+            <article class="api-card" id="pub-categories">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/public/categories</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-public">Pubblica</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce l'elenco delle categorie merchandise con l'URL completo dell'immagine di copertina.</p>
+                </div>
+            </article>
+
+            <!-- POST /api/public/user -->
+            <article class="api-card" id="pub-register">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/public/user</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-public">Pubblica</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Registrazione di un nuovo utente. Crea record in tabella <code>users</code> e salva le credenziali hashate (bcrypt salt rounds 10) in <code>credentials</code> con transazione DB sicura.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">name</span> <span class="badge-required">*</span></td><td>string</td><td>Nome dell'utente</td></tr>
+                                <tr><td><span class="field-name">surname</span> <span class="badge-required">*</span></td><td>string</td><td>Cognome dell'utente</td></tr>
+                                <tr><td><span class="field-name">username</span> <span class="badge-required">*</span></td><td>string</td><td>Nome utente (deve essere univoco)</td></tr>
+                                <tr><td><span class="field-name">password</span> <span class="badge-required">*</span></td><td>string</td><td>Password che verrà hashata</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 201 Created</span></div>
+                        <pre><code>{
+  "message": "Utente registrato con successo",
+  "userID": 16
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <!-- SEZIONE 3: ROTTE UTENTE AUTENTICATO -->
+        <section class="api-category">
+            <h2 class="category-title">👤 Utente Autenticato (/api/user)</h2>
+            <p class="category-desc">Richiedono l'header <code>Authorization: Bearer &lt;token&gt;</code>. L'ID utente viene ricavato direttamente dal token validato.</p>
+
+            <!-- GET /api/user/ -->
+            <article class="api-card" id="user-profile">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/user/</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce nome e cognome dell'utente loggato associato al token.</p>
+                </div>
+            </article>
+
+            <!-- GET /api/user/carts -->
+            <article class="api-card" id="user-get-cart">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/user/carts</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Recupera tutti i prodotti attualmente nel carrello dell'utente, con le relative quantità e gli accessori raggruppati.</p>
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "id": 10,
+    "quantity": 2,
+    "accessories": [
+      { "accessoryID": 15, "quantity": 1 }
+    ]
+  }
+]</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- POST /api/user/carts -->
+            <article class="api-card" id="user-add-cart">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/user/carts</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Aggiunge un prodotto al carrello (o somma la quantità se l'articolo è già presente). Crea automaticamente il carrello se non esiste.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">productID</span> <span class="badge-required">*</span></td><td>number</td><td>ID del prodotto da inserire</td></tr>
+                                <tr><td><span class="field-name">quantity</span> <span class="badge-required">*</span></td><td>number</td><td>Quantità desiderata (deve essere &gt;= 1)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Esempio Body</span></div>
+                        <pre><code>{
+  "productID": 10,
+  "quantity": 2
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/user/orders -->
+            <article class="api-card" id="user-get-orders">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/user/orders</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce la cronologia degli ordini dell'utente con stato di avanzamento, indirizzo di spedizione, totale e spese di consegna.</p>
+                </div>
+            </article>
+
+            <!-- GET /api/user/orders/:orderID -->
+            <article class="api-card" id="user-get-order-id">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/user/orders/<span class="param">:orderID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce i dati di uno specifico ordine dell'utente verificando che appartenga a lui.</p>
+                </div>
+            </article>
+
+            <!-- POST /api/user/orders -->
+            <article class="api-card" id="user-create-order">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/user/orders</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Converte il carrello attuale dell'utente in un nuovo ordine ufficiale con stato iniziale "In attesa di conferma" (ID: 1) e svuota il carrello.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">addressID</span> <span class="badge-required">*</span></td><td>number</td><td>ID di un indirizzo valido appartenente all'utente</td></tr>
+                                <tr><td><span class="field-name">shipping_fee</span> <span class="badge-required">*</span></td><td>number</td><td>Costo di spedizione calcolato (es. <code>4.99</code>)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/user/addresses -->
+            <article class="api-card" id="user-get-addr">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/user/addresses</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce tutti gli indirizzi attivi (active = 1) salvati dall'utente.</p>
+                </div>
+            </article>
+
+            <!-- POST /api/user/addresses -->
+            <article class="api-card" id="user-add-addr">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/user/addresses</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Aggiunge un nuovo indirizzo di spedizione all'elenco dell'utente.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">street</span> <span class="badge-required">*</span></td><td>string</td><td>Via/Piazza e civico</td></tr>
+                                <tr><td><span class="field-name">locality</span> <span class="badge-required">*</span></td><td>string</td><td>Località / Frazione</td></tr>
+                                <tr><td><span class="field-name">city</span> <span class="badge-required">*</span></td><td>string</td><td>Città / Comune</td></tr>
+                                <tr><td><span class="field-name">province</span> <span class="badge-required">*</span></td><td>string (2 car.)</td><td>Sigla provincia (es. <code>PR</code>, <code>MI</code>, <code>RM</code>)</td></tr>
+                                <tr><td><span class="field-name">state</span> <span class="badge-required">*</span></td><td>string</td><td>Stato (es. <code>Italia</code>)</td></tr>
+                                <tr><td><span class="field-name">zip_code</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>CAP postale</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+
+            <!-- DELETE /api/user/addresses/:addressID -->
+            <article class="api-card" id="user-del-addr">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="endpoint-path">/api/user/addresses/<span class="param">:addressID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Disattiva (soft delete, <code>active = 0</code>) un indirizzo dell'utente senza cancellare lo storico degli ordini passati.</p>
+                </div>
+            </article>
+        </section>
+
+        <!-- SEZIONE 4: ROTTE ADMIN & OWNER -->
+        <section class="api-category">
+            <h2 class="category-title">👑 Admin & Owner (/api/adm)</h2>
+            <p class="category-desc">Richiedono token con ruolo <code>ADMIN (1)</code> oppure <code>OWNER (0)</code>. Le query si adattano automaticamente fornendo visibilità estesa all'Owner.</p>
+
+            <!-- GET /api/adm/users -->
+            <article class="api-card" id="adm-get-users">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/adm/users</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce l'elenco degli utenti con il rispettivo ruolo e il numero totale di ordini effettuati.</p>
+
+                    <div class="callout-box callout-owner">
+                        <strong>Comportamento Ruoli:</strong><br>
+                        • <strong>OWNER:</strong> Visualizza <u>tutti</u> gli account nel database (inclusi admin e se stesso).<br>
+                        • <strong>ADMIN:</strong> Visualizza solo gli utenti normali e disabilitati (<code>WHERE roles.ID IN (2, 3)</code>).
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 2,
+    "name": "Mario",
+    "surname": "Rossi",
+    "role": "USER",
+    "n_orders": 3
+  }
+]</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/adm/users/:userID -->
+            <article class="api-card" id="adm-get-user-id">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/adm/users/<span class="param">:userID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce i dati anagrafici e tutti gli indirizzi di uno specifico utente.</p>
+                    <div class="callout-box callout-owner">
+                        • <strong>ADMIN:</strong> Può accedere solo a utenti con ruolo 2 o 3.<br>
+                        • <strong>OWNER:</strong> Accesso illimitato a qualsiasi ID utente.
+                    </div>
+                </div>
+            </article>
+
+            <!-- DELETE /api/adm/user/:userID -->
+            <article class="api-card" id="adm-del-user">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="endpoint-path">/api/adm/user/<span class="param">:userID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Disabilita un utente impostando il suo <code>roleID = 3</code> (DELETED).</p>
+                </div>
+            </article>
+
+            <!-- GET /api/adm/roles -->
+            <article class="api-card" id="adm-get-roles">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/adm/roles</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce l'elenco dei ruoli.</p>
+                    <div class="callout-box callout-owner">
+                        • <strong>OWNER:</strong> Vede tutti i ruoli (0: OWNER, 1: ADMIN, 2: USER, 3: DELETED).<br>
+                        • <strong>ADMIN:</strong> Vede unicamente i ruoli assegnabili 2 (USER) e 3 (DELETED).
+                    </div>
+                </div>
+            </article>
+
+            <!-- GET /api/adm/orders -->
+            <article class="api-card" id="adm-get-orders">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/adm/orders</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce l'elenco generale degli ordini effettuati con filtri opzionali.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Query Parameters (Opzionali)</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">userID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>Filtra gli ordini per un determinato utente</td></tr>
+                                <tr><td><span class="field-name">orderID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>Filtra per specifico numero d'ordine</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="callout-box callout-owner">
+                        • <strong>OWNER:</strong> Può visualizzare gli ordini di qualsiasi utente nel database.<br>
+                        • <strong>ADMIN:</strong> Non può visualizzare gli ordini di altri admin o dell'owner.
+                    </div>
+                </div>
+            </article>
+
+            <!-- DELETE /api/adm/orders/:orderID -->
+            <article class="api-card" id="adm-del-order">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="endpoint-path">/api/adm/orders/<span class="param">:orderID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Annulla un ordine impostando il suo stato a <code>6</code> (Annullato).</p>
+                </div>
+            </article>
+
+            <!-- POST /api/adm/products -->
+            <article class="api-card" id="adm-add-prod">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/adm/products</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Crea un nuovo prodotto nel catalogo e, se fornito <code>image_path</code>, ne collega subito l'immagine.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">name</span> <span class="badge-required">*</span></td><td>string</td><td>Nome del prodotto</td></tr>
+                                <tr><td><span class="field-name">price</span> <span class="badge-required">*</span></td><td>number</td><td>Prezzo (es. <code>49.90</code>)</td></tr>
+                                <tr><td><span class="field-name">description</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Descrizione dettagliata</td></tr>
+                                <tr><td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID della categoria di appartenenza</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine (es. <code>prodotto.jpg</code>)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+
+            <!-- DELETE /api/adm/products/:productID -->
+            <article class="api-card" id="adm-del-prod">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="endpoint-path">/api/adm/products/<span class="param">:productID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Disattiva un prodotto dal catalogo (<code>active = 0</code>).</p>
+                </div>
+            </article>
+
+            <!-- POST /api/adm/categories -->
+            <article class="api-card" id="adm-add-cat">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/adm/categories</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Crea una nuova categoria merceologica con eventuale immagine associata.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria (es. <code>Sedie</code>)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine categoria</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <!-- SCRIPT FILTRO IN TEMPO REALE -->
+    <script>
+        // Filtro rapido di ricerca per sidebar ed endpoint
+        const searchInput = document.getElementById('searchInput');
+        const cards = document.querySelectorAll('.api-card');
+        const navItems = document.querySelectorAll('.nav-links li');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            navItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Copia snippet
+        function copySnippet(btn) {
+            const code = btn.closest('.code-container').querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = 'Copiato!';
+                btn.style.color = '#38bdf8';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.color = '';
+                }, 1800);
+            });
+        }
+    </script>
+</body>
+</html>
