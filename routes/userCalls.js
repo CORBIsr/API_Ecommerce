@@ -52,12 +52,15 @@ router.get('/carts', (req, res) => {
     connection.query(`
         SELECT 
             cart_details.productID AS id,
+            products.name,
+            products.price,
+            (SELECT products_images.image_path FROM products_images WHERE products.ID = products_images.productID LIMIT 1) AS image,
             cart_details.qty AS quantity,
             products.productID AS fatherID
         FROM cart_details
         INNER JOIN products ON cart_details.productID = products.ID
         INNER JOIN carts ON cart_details.cartID = carts.ID
-        WHERE carts.userID = ?
+        WHERE carts.userID = ?;
     `, [userID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
@@ -70,6 +73,9 @@ router.get('/carts', (req, res) => {
                 if (p.fatherID === null) {
                     const prod = {
                         id: p.id,
+                        name: p.name,
+                        price: p.price,
+                        image: p.image,
                         quantity: p.quantity,
                         accessories: []
                     }
@@ -174,7 +180,7 @@ router.get('/orders', (req, res) => {
             orders.ID,
             orders.date,
             order_status.status,
-            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
+            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.zip_code, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
             SUM(order_datails.qty) AS n_product,
             SUM(order_datails.price) AS total_price,
             orders.shipping_fee
@@ -206,24 +212,64 @@ router.get('/orders/:orderID', (req, res) => {
             orders.ID,
             orders.date,
             order_status.status,
-            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
-            SUM(order_datails.qty) AS n_product,
-            SUM(order_datails.price) AS total_price,
+            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.zip_code, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
+            
+            order_datails.productID AS productID,
+            products.name,
+            products.price,
+            (SELECT products_images.image_path FROM products_images WHERE products.ID = products_images.productID LIMIT 1) AS image,
+            order_datails.qty AS quantity,
+            products.productID AS fatherID,
+            
+            SUM(order_datails.qty) OVER(PARTITION BY orders.ID) AS total_order_qty,
+            SUM(order_datails.price * order_datails.qty) OVER(PARTITION BY orders.ID) AS total_order_price,
+            
             orders.shipping_fee
         FROM orders
         INNER JOIN order_status ON orders.statusID = order_status.ID
         INNER JOIN addresses ON orders.addressID = addresses.ID
         INNER JOIN order_datails ON orders.ID = order_datails.orderID
         INNER JOIN users ON orders.userID = users.ID
+        INNER JOIN products ON order_datails.productID = products.ID
         WHERE users.ID = ? AND orders.ID = ?
-        GROUP BY orders.ID
         ORDER BY order_status.ID, orders.date DESC;
     `, [userID, ordineID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
-            res.json(results);
+            if (results.length > 0) {
+                const order = results[0];
+
+                var ord = {
+                    ID: order.ID,
+                    date: order.date,
+                    status: order.status,
+                    address: order.address,
+                    products: []
+                };
+                const Products = results.filter(r => !r.fatherID || r.fatherID === 0);
+                const Accessories = results.filter(r => r.fatherID && r.fatherID !== 0);
+
+                ord.products = Products.map(main => {
+                    return {
+                        ID: main.productID,
+                        name: main.name,
+                        price: main.price,
+                        image: main.image,
+                        quantity: main.quantity,
+                        accessories: Accessories
+                            .filter(acc => acc.fatherID === main.productID)
+                            .map(acc => ({
+                                ID: acc.productID,
+                                name: acc.name,
+                                price: acc.price,
+                                quantity: acc.quantity
+                            }))
+                    };
+                });
+            }
+            res.json(ord);
         }
     });
 
@@ -354,8 +400,8 @@ router.post('/addresses', (req, res) => {
     const userID = req.user.ID;
     const { street, locality, zip_code, city, province, state } = req.body;
 
-    if (!street || !locality || !city || !province || !state) {
-        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: street, locality, city, province, state' });
+    if (!street || !locality || !zip_code || !city || !province || !state) {
+        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: street, locality, zip_code, city, province, state' });
     }
 
     if (province.length !== 2) {
@@ -364,7 +410,7 @@ router.post('/addresses', (req, res) => {
 
     connection.query(
         'INSERT INTO addresses (street, locality, zip_code, city, province, state, userID) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [street, locality, zip_code || 0, city, province, state, userID],
+        [street, locality, zip_code, city, province, state, userID],
         (error, result) => {
             if (error) {
                 console.error('Errore durante l\'esecuzione della query:', error);
@@ -400,8 +446,8 @@ router.put('/addresses/:addressID', (req, res) => {
     const addressID = req.params.addressID;
     const { street, locality, zip_code, city, province, state } = req.body;
 
-    if (!street || !locality || !city || !province || !state) {
-        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: street, locality, city, province, state' });
+    if (!street || !locality || !zip_code || !city || !province || !state) {
+        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: street, locality, zip_code, city, province, state' });
     }
 
     if (province.length !== 2) {
@@ -410,7 +456,7 @@ router.put('/addresses/:addressID', (req, res) => {
 
     connection.query(
         'UPDATE addresses SET street = ?, locality = ?, zip_code = ?, city = ?, province = ?, state = ? WHERE ID = ? AND userID = ? AND active = 1',
-        [street, locality, zip_code || 0, city, province, state, addressID, userID],
+        [street, locality, zip_code, city, province, state, addressID, userID],
         (error, result) => {
             if (error) {
                 console.error('Errore durante l\'esecuzione della query:', error);
