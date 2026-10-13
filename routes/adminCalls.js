@@ -8,13 +8,12 @@ const connection = require('../config/db');
 router.get('/users', (req, res) => {
     connection.query(`
         SELECT
-            users.ID, name, surname, roles.role,
-            COUNT(orders.ID) AS n_orders
+            users.ID, name, surname, roles.role
         FROM users
         INNER JOIN roles ON users.roleID = roles.ID
-        LEFT JOIN orders ON users.ID = orders.userID
-        ${!req.isOwner ? "WHERE roles.ID IN (2, 3)" : ""}        
-        GROUP BY users.ID;
+        ${!req.isOwner ? "WHERE roles.ID IN (2, 3)" : ""}   
+        GROUP BY users.ID
+        ORDER BY users.roleID, users.surname, users.name;
     `, (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
@@ -32,7 +31,7 @@ router.get('/users/:userID', (req, res) => {
     connection.query(`
         SELECT
             name, surname, roles.role,
-            addresses.street, addresses.locality, addresses.city, addresses.province, addresses.state
+            addresses.street, addresses.locality, addresses.zip_code, addresses.city, addresses.province, addresses.state
         FROM users
         INNER JOIN roles ON users.roleID = roles.ID
         LEFT JOIN addresses ON users.ID = addresses.userID
@@ -53,6 +52,7 @@ router.get('/users/:userID', (req, res) => {
                 user.addresses.push({
                     street: r.street,
                     locality: r.locality,
+                    zip_code: r.zip_code,
                     city: r.city,
                     province: r.province,
                     state: r.state
@@ -140,16 +140,27 @@ router.get('/orders', (req, res) => {
             orders.ID,
             orders.date,
             order_status.status,
-            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
-            SUM(order_datails.qty) AS n_products,
-            SUM(order_datails.price) AS total_price,
+            CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.zip_code, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
+            ${orderID ? `
+                order_datails.productID AS productID,
+                products.name,
+                products.price,
+                (SELECT products_images.image_path FROM products_images WHERE products.ID = products_images.productID LIMIT 1) AS image,
+                order_datails.qty AS quantity,
+                products.productID AS fatherID,
+                SUM(order_datails.qty) OVER(PARTITION BY orders.ID) AS n_products,
+                SUM(order_datails.price) OVER(PARTITION BY orders.ID) AS total_price,
+                `: `
+                SUM(order_datails.qty) AS n_products,
+                SUM(order_datails.price) AS total_price,
+                `}
             orders.shipping_fee
         FROM orders
         INNER JOIN order_status ON orders.statusID = order_status.ID
         INNER JOIN addresses ON orders.addressID = addresses.ID
         INNER JOIN order_datails ON orders.ID = order_datails.orderID
-        INNER JOIN users ON orders.userID = users.ID
-        ${!req.isOwner ? " WHERE users.roleID IN (2, 3)" : ""}`;
+        ${orderID ? "INNER JOIN products ON order_datails.productID = products.ID" : ""}
+        INNER JOIN users ON orders.userID = users.ID`;
 
     var filter = [];
     var IDs = [];
@@ -162,19 +173,68 @@ router.get('/orders', (req, res) => {
         filter.push("orders.ID = ?");
         IDs.push(parseInt(orderID));
     }
+    if (!req.isOwner) {
+        filter.push("users.roleID IN (2, 3)")
+    }
 
     if (filter.length > 0) {
         query += " WHERE " + filter.join(" AND ");
     }
 
-    query += " GROUP BY orders.ID ORDER BY orders.date DESC, orders.statusID";
+    query += orderID
+        ? " ORDER BY orders.date DESC, orders.statusID"
+        : " GROUP BY orders.ID ORDER BY orders.date DESC, orders.statusID";
 
     connection.query(query, IDs, (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
-            res.json(results);
+            const orders = [];
+            const index = {};
+
+            results.forEach(row => {
+                var ord = index[row.ID];
+                if (!ord) {
+                    ord = {
+                        ID: row.ID,
+                        date: row.date,
+                        status: row.status,
+                        address: row.address,
+                        products: []
+                    };
+                    index[row.ID] = ord;
+                    orders.push(ord);
+                }
+
+                if (row.productID !== undefined && !row.fatherID) {
+                    ord.products.push({
+                        ID: row.productID,
+                        name: row.name,
+                        price: row.price,
+                        image: row.image,
+                        quantity: row.quantity,
+                        accessories: []
+                    });
+                }
+            });
+
+            if (orderID) {
+                results
+                    .filter(row => row.fatherID)
+                    .forEach(acc => {
+                        const parent = index[acc.ID].products.find(p => p.ID === acc.fatherID);
+                        if (parent) {
+                            parent.accessories.push({
+                                ID: acc.productID,
+                                name: acc.name,
+                                price: acc.price,
+                                quantity: acc.quantity
+                            });
+                        }
+                    });
+            }
+            res.json(orders);
         }
     });
 
