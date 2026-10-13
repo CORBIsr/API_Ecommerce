@@ -3,6 +3,7 @@ const express = require('express');
 const db = require('./config/db');
 const cors = require('cors'); // cors
 const app = express();
+const path = require('path');
 
 app.use(cors());// cors
 app.use(express.json());
@@ -15,7 +16,7 @@ const authRoutes = require('./routes/auth');
 const tokenVerifier = require('./middleware/auth')
 const isInRole = require('./middleware/roles');
 
-app.get('/api/docs', (req, res) => {
+app.get(['/api/', '/api'], (req, res) => {
     res.sendFile(path.join(__dirname, 'api-docs.html'));
 });
 
