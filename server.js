@@ -15,6 +15,10 @@ const authRoutes = require('./routes/auth');
 const tokenVerifier = require('./middleware/auth')
 const isInRole = require('./middleware/roles');
 
+app.get('/api/docs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'api-docs.html'));
+});
+
 app.use('/api/public', publicRoutes);
 app.use('/api/user', tokenVerifier, userRoutes);
 app.use('/api/adm', tokenVerifier, isInRole(+process.env.ADMIN_ROLE, +process.env.OWNER_ROLE), adminRoutes);
