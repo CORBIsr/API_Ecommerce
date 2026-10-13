@@ -99,7 +99,7 @@ router.get('/categories', (req, res) => {
 
 //#region users
 
-router.post('/user', async (req, res) => {
+router.post('/users', async (req, res) => {
     const { name, surname, username, password } = req.body;
 
     if (!name || !surname || !username || !password) {

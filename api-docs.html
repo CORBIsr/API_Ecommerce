@@ -477,14 +477,15 @@
                     <li><a href="#pub-product-id"><span class="nav-badge method-GET">GET</span> /public/products/:id</a></li>
                     <li><a href="#pub-accessories"><span class="nav-badge method-GET">GET</span> /public/accessories/:id</a></li>
                     <li><a href="#pub-categories"><span class="nav-badge method-GET">GET</span> /public/categories</a></li>
-                    <li><a href="#pub-register"><span class="nav-badge method-POST">POST</span> /public/user</a></li>
+                    <li><a href="#pub-register"><span class="nav-badge method-POST">POST</span> /public/users</a></li>
                 </ul>
             </div>
 
             <div class="nav-group">
                 <div class="nav-title">Utente Loggato</div>
                 <ul class="nav-links">
-                    <li><a href="#user-profile"><span class="nav-badge method-GET">GET</span> /user/</a></li>
+                    <li><a href="#user-profile"><span class="nav-badge method-GET">GET</span> /user/me</a></li>
+                    <li><a href="#user-update-me"><span class="nav-badge method-PUT">PUT</span> /user/me</a></li>
                     <li><a href="#user-get-cart"><span class="nav-badge method-GET">GET</span> /user/carts</a></li>
                     <li><a href="#user-add-cart"><span class="nav-badge method-POST">POST</span> /user/carts</a></li>
                     <li><a href="#user-get-orders"><span class="nav-badge method-GET">GET</span> /user/orders</a></li>
@@ -492,6 +493,7 @@
                     <li><a href="#user-create-order"><span class="nav-badge method-POST">POST</span> /user/orders</a></li>
                     <li><a href="#user-get-addr"><span class="nav-badge method-GET">GET</span> /user/addresses</a></li>
                     <li><a href="#user-add-addr"><span class="nav-badge method-POST">POST</span> /user/addresses</a></li>
+                    <li><a href="#user-update-addr"><span class="nav-badge method-PUT">PUT</span> /user/addresses/:id</a></li>
                     <li><a href="#user-del-addr"><span class="nav-badge method-DELETE">DELETE</span> /user/addresses/:id</a></li>
                 </ul>
             </div>
@@ -501,13 +503,16 @@
                 <ul class="nav-links">
                     <li><a href="#adm-get-users"><span class="nav-badge method-GET">GET</span> /adm/users</a></li>
                     <li><a href="#adm-get-user-id"><span class="nav-badge method-GET">GET</span> /adm/users/:id</a></li>
-                    <li><a href="#adm-del-user"><span class="nav-badge method-DELETE">DELETE</span> /adm/user/:id</a></li>
+                    <li><a href="#adm-update-user"><span class="nav-badge method-PUT">PUT</span> /adm/users/:id</a></li>
+                    <li><a href="#adm-del-user"><span class="nav-badge method-DELETE">DELETE</span> /adm/users/:id</a></li>
                     <li><a href="#adm-get-roles"><span class="nav-badge method-GET">GET</span> /adm/roles</a></li>
                     <li><a href="#adm-get-orders"><span class="nav-badge method-GET">GET</span> /adm/orders</a></li>
                     <li><a href="#adm-del-order"><span class="nav-badge method-DELETE">DELETE</span> /adm/orders/:id</a></li>
                     <li><a href="#adm-add-prod"><span class="nav-badge method-POST">POST</span> /adm/products</a></li>
+                    <li><a href="#adm-update-prod"><span class="nav-badge method-PUT">PUT</span> /adm/products/:id</a></li>
                     <li><a href="#adm-del-prod"><span class="nav-badge method-DELETE">DELETE</span> /adm/products/:id</a></li>
                     <li><a href="#adm-add-cat"><span class="nav-badge method-POST">POST</span> /adm/categories</a></li>
+                    <li><a href="#adm-update-cat"><span class="nav-badge method-PUT">PUT</span> /adm/categories/:id</a></li>
                 </ul>
             </div>
         </nav>
@@ -740,12 +745,12 @@
                 </div>
             </article>
 
-            <!-- POST /api/public/user -->
+            <!-- POST /api/public/users -->
             <article class="api-card" id="pub-register">
                 <div class="api-card-header">
                     <div class="endpoint-wrapper">
                         <span class="method-badge method-POST">POST</span>
-                        <span class="endpoint-path">/api/public/user</span>
+                        <span class="endpoint-path">/api/public/users</span>
                     </div>
                     <div class="meta-badges">
                         <span class="role-pill role-public">Pubblica</span>
@@ -782,12 +787,12 @@
             <h2 class="category-title">👤 Utente Autenticato (/api/user)</h2>
             <p class="category-desc">Richiedono l'header <code>Authorization: Bearer &lt;token&gt;</code>. L'ID utente viene ricavato direttamente dal token validato.</p>
 
-            <!-- GET /api/user/ -->
+            <!-- GET /api/user/me -->
             <article class="api-card" id="user-profile">
                 <div class="api-card-header">
                     <div class="endpoint-wrapper">
                         <span class="method-badge method-GET">GET</span>
-                        <span class="endpoint-path">/api/user/</span>
+                        <span class="endpoint-path">/api/user/me</span>
                     </div>
                     <div class="meta-badges">
                         <span class="role-pill role-user">Token Richiesto</span>
@@ -795,6 +800,39 @@
                 </div>
                 <div class="api-card-body">
                     <p class="endpoint-summary">Restituisce nome e cognome dell'utente loggato associato al token.</p>
+                </div>
+            </article>
+
+            <!-- PUT /api/user/me -->
+            <article class="api-card" id="user-update-me">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-PUT">PUT</span>
+                        <span class="endpoint-path">/api/user/me</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Aggiorna i dati anagrafici (nome e cognome) dell'utente autenticato.</p>
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">name</span> <span class="badge-required">*</span></td><td>string</td><td>Nuovo nome</td></tr>
+                                <tr><td><span class="field-name">surname</span> <span class="badge-required">*</span></td><td>string</td><td>Nuovo cognome</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <pre><code>{
+  "name": "Mario",
+  "surname": "Rossi"
+}</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -966,6 +1004,56 @@
                 </div>
             </article>
 
+            <!-- PUT /api/user/addresses/:addressID -->
+            <article class="api-card" id="user-update-addr">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-PUT">PUT</span>
+                        <span class="endpoint-path">/api/user/addresses/<span class="param">:addressID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Modifica e aggiorna completamente un indirizzo attivo appartenente all'utente loggato.</p>
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">addressID</span> <span class="badge-required">*</span></td><td>number</td><td>ID dell'indirizzo da aggiornare</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">street</span> <span class="badge-required">*</span></td><td>string</td><td>Via/Piazza e civico</td></tr>
+                                <tr><td><span class="field-name">locality</span> <span class="badge-required">*</span></td><td>string</td><td>Località / Frazione</td></tr>
+                                <tr><td><span class="field-name">city</span> <span class="badge-required">*</span></td><td>string</td><td>Città / Comune</td></tr>
+                                <tr><td><span class="field-name">province</span> <span class="badge-required">*</span></td><td>string (2 car.)</td><td>Sigla provincia (es. <code>PR</code>)</td></tr>
+                                <tr><td><span class="field-name">state</span> <span class="badge-required">*</span></td><td>string</td><td>Stato (es. <code>Italia</code>)</td></tr>
+                                <tr><td><span class="field-name">zip_code</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>CAP postale</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <pre><code>{
+  "street": "Via Roma 10",
+  "locality": "Centro",
+  "city": "Parma",
+  "province": "PR",
+  "state": "Italia",
+  "zip_code": 43121
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
             <!-- DELETE /api/user/addresses/:addressID -->
             <article class="api-card" id="user-del-addr">
                 <div class="api-card-header">
@@ -1045,12 +1133,61 @@
                 </div>
             </article>
 
-            <!-- DELETE /api/adm/user/:userID -->
+            <!-- PUT /api/adm/users/:userID -->
+            <article class="api-card" id="adm-update-user">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-PUT">PUT</span>
+                        <span class="endpoint-path">/api/adm/users/<span class="param">:userID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Modifica i dati anagrafici e il ruolo di un utente.</p>
+                    <div class="callout-box callout-owner">
+                        • <strong>OWNER:</strong> Può assegnare qualsiasi ruolo (incluso Admin o Owner).<br>
+                        • <strong>ADMIN:</strong> Non può assegnare ruoli privilegiati (0 o 1).
+                    </div>
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">userID</span> <span class="badge-required">*</span></td><td>number</td><td>ID dell'utente da aggiornare</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">name</span> <span class="badge-required">*</span></td><td>string</td><td>Nome</td></tr>
+                                <tr><td><span class="field-name">surname</span> <span class="badge-required">*</span></td><td>string</td><td>Cognome</td></tr>
+                                <tr><td><span class="field-name">roleID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID del nuovo ruolo (0: Owner, 1: Admin, 2: User, 3: Deleted)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <pre><code>{
+  "name": "Mario",
+  "surname": "Rossi",
+  "roleID": 2
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- DELETE /api/adm/users/:userID -->
             <article class="api-card" id="adm-del-user">
                 <div class="api-card-header">
                     <div class="endpoint-wrapper">
                         <span class="method-badge method-DELETE">DELETE</span>
-                        <span class="endpoint-path">/api/adm/user/<span class="param">:userID</span></span>
+                        <span class="endpoint-path">/api/adm/users/<span class="param">:userID</span></span>
                     </div>
                     <div class="meta-badges">
                         <span class="role-pill role-admin">Admin</span>
@@ -1163,6 +1300,55 @@
                 </div>
             </article>
 
+            <!-- PUT /api/adm/products/:productID -->
+            <article class="api-card" id="adm-update-prod">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-PUT">PUT</span>
+                        <span class="endpoint-path">/api/adm/products/<span class="param">:productID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Modifica e aggiorna completamente un prodotto e la sua immagine correlata.</p>
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">productID</span> <span class="badge-required">*</span></td><td>number</td><td>ID del prodotto da aggiornare</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">name</span> <span class="badge-required">*</span></td><td>string</td><td>Nome del prodotto</td></tr>
+                                <tr><td><span class="field-name">price</span> <span class="badge-required">*</span></td><td>number</td><td>Prezzo aggiornato</td></tr>
+                                <tr><td><span class="field-name">description</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Descrizione</td></tr>
+                                <tr><td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID della categoria</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine (es. <code>tavolo_lux.jpg</code>)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <pre><code>{
+  "name": "Tavolo Legno Lux",
+  "price": 349.99,
+  "description": "Descrizione aggiornata",
+  "categoryID": 1,
+  "image_path": "tavolo_lux.jpg"
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
             <!-- DELETE /api/adm/products/:productID -->
             <article class="api-card" id="adm-del-prod">
                 <div class="api-card-header">
@@ -1204,6 +1390,49 @@
                                 <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine categoria</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </article>
+
+            <!-- PUT /api/adm/categories/:categoryID -->
+            <article class="api-card" id="adm-update-cat">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-PUT">PUT</span>
+                        <span class="endpoint-path">/api/adm/categories/<span class="param">:categoryID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Modifica e aggiorna completamente una categoria e la sua immagine associata.</p>
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">categoryID</span> <span class="badge-required">*</span></td><td>number</td><td>ID della categoria da aggiornare</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="params-section">
+                        <div class="params-title">Body JSON Richiesto</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria aggiornata</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine aggiornata</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <pre><code>{
+  "category": "Zona Giorno",
+  "image_path": "zona_giorno.jpg"
+}</code></pre>
                     </div>
                 </div>
             </article>

@@ -16,9 +16,7 @@ const authRoutes = require('./routes/auth');
 const tokenVerifier = require('./middleware/auth')
 const isInRole = require('./middleware/roles');
 
-console.log(__dirname)
-
-app.get(['/', '/api/', '/api'], (req, res) => {
+app.get('/api/', (req, res) => {
     res.sendFile(path.join(__dirname, 'api-docs.html'));
 });
 

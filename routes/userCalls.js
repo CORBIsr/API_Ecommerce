@@ -5,7 +5,7 @@ const connection = require('../config/db');
 
 //#region user
 
-router.get('/', (req, res) => {
+router.get('/me', (req, res) => {
     const userID = req.user.ID;
 
     connection.query('SELECT name, surname FROM users WHERE ID = ?', [userID], (error, results, fields) => {
@@ -16,7 +16,30 @@ router.get('/', (req, res) => {
             res.json(results);
         }
     });
+});
 
+router.put('/me', (req, res) => {
+    const userID = req.user.ID;
+    const { name, surname } = req.body;
+
+    if (!name || !surname) {
+        return res.status(400).json({ error: 'name e surname sono obbligatori' });
+    }
+
+    connection.query(
+        'UPDATE users SET name = ?, surname = ? WHERE ID = ?',
+        [name, surname, userID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'aggiornamento dei dati utente' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Utente non trovato' });
+            }
+            res.json({ message: 'Dati utente aggiornati con successo' });
+        }
+    );
 });
 
 //#endregion
@@ -368,6 +391,35 @@ router.delete('/addresses/:addressID', (req, res) => {
                 return res.status(404).json({ error: 'Indirizzo non trovato o non autorizzato' });
             }
             res.json({ message: 'Indirizzo disattivato con successo' });
+        }
+    );
+});
+
+router.put('/addresses/:addressID', (req, res) => {
+    const userID = req.user.ID;
+    const addressID = req.params.addressID;
+    const { street, locality, zip_code, city, province, state } = req.body;
+
+    if (!street || !locality || !city || !province || !state) {
+        return res.status(400).json({ error: 'Tutti i campi sono obbligatori: street, locality, city, province, state' });
+    }
+
+    if (province.length !== 2) {
+        return res.status(400).json({ error: 'La province deve essere un codice di 2 caratteri (es. PR)' });
+    }
+
+    connection.query(
+        'UPDATE addresses SET street = ?, locality = ?, zip_code = ?, city = ?, province = ?, state = ? WHERE ID = ? AND userID = ? AND active = 1',
+        [street, locality, zip_code || 0, city, province, state, addressID, userID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'aggiornamento dell\'indirizzo' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Indirizzo non trovato o non autorizzato' });
+            }
+            res.json({ message: 'Indirizzo aggiornato con successo' });
         }
     );
 });

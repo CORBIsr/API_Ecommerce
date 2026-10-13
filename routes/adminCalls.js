@@ -65,7 +65,7 @@ router.get('/users/:userID', (req, res) => {
 
 });
 
-router.delete('/user/:userID', (req, res) => {
+router.delete('/users/:userID', (req, res) => {
     const userID = req.params.userID;
 
     connection.query('UPDATE users SET roleID = 3 WHERE ID = ?', [userID], (error, results, fields) => {
@@ -77,6 +77,40 @@ router.delete('/user/:userID', (req, res) => {
         }
     });
 
+});
+
+router.put('/users/:userID', (req, res) => {
+    const userID = req.params.userID;
+    const { name, surname, roleID } = req.body;
+
+    if (!name || !surname) {
+        return res.status(400).json({ error: 'name e surname sono obbligatori' });
+    }
+
+    let sql = 'UPDATE users SET name = ?, surname = ?';
+    let params = [name, surname];
+
+    if (roleID !== undefined) {
+        if (!req.isOwner && (roleID === 0 || roleID === 1)) {
+            return res.status(403).json({ error: 'Non hai i permessi per assegnare questo ruolo' });
+        }
+        sql += ', roleID = ?';
+        params.push(roleID);
+    }
+
+    sql += ' WHERE ID = ?';
+    params.push(userID);
+
+    connection.query(sql, params, (error, result) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            return res.status(500).json({ error: 'Errore durante l\'aggiornamento dell\'utente' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Utente non trovato' });
+        }
+        res.json({ message: 'Utente aggiornato con successo' });
+    });
 });
 
 router.get('/roles', (req, res) => {
@@ -225,6 +259,68 @@ router.delete('/products/:productID', (req, res) => {
     );
 });
 
+router.put('/products/:productID', (req, res) => {
+    const productID = req.params.productID;
+    const { name, description, price, categoryID, image_path } = req.body;
+
+    if (!name || price === undefined) {
+        return res.status(400).json({ error: 'name e price sono obbligatori' });
+    }
+
+    connection.query(
+        'UPDATE products SET name = ?, description = ?, price = ?, categoryID = ? WHERE ID = ? AND active = 1',
+        [name, description || null, price, categoryID || null, productID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'aggiornamento del prodotto' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Prodotto non trovato o non attivo' });
+            }
+
+            if (image_path) {
+                connection.query(
+                    'SELECT ID FROM products_images WHERE productID = ? LIMIT 1',
+                    [productID],
+                    (imgError, imgResults) => {
+                        if (imgError) {
+                            console.error('Errore durante la verifica dell\'immagine:', imgError);
+                            return res.json({ message: 'Prodotto aggiornato con successo' });
+                        }
+
+                        if (imgResults.length > 0) {
+                            connection.query(
+                                'UPDATE products_images SET image_path = ? WHERE ID = ?',
+                                [image_path, imgResults[0].ID],
+                                (updateImgErr) => {
+                                    if (updateImgErr) {
+                                        console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
+                                    }
+                                    res.json({ message: 'Prodotto e immagine aggiornati con successo' });
+                                }
+                            );
+                        } else {
+                            connection.query(
+                                'INSERT INTO products_images (image_path, productID) VALUES (?, ?)',
+                                [image_path, productID],
+                                (insertImgErr) => {
+                                    if (insertImgErr) {
+                                        console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
+                                    }
+                                    res.json({ message: 'Prodotto e immagine aggiornati con successo' });
+                                }
+                            );
+                        }
+                    }
+                );
+            } else {
+                res.json({ message: 'Prodotto aggiornato con successo' });
+            }
+        }
+    );
+});
+
 //#endregion
 
 //#region categories
@@ -261,6 +357,68 @@ router.post('/categories', (req, res) => {
                 );
             } else {
                 res.status(201).json({ message: 'Categoria creata con successo', categoryID });
+            }
+        }
+    );
+});
+
+router.put('/categories/:categoryID', (req, res) => {
+    const categoryID = req.params.categoryID;
+    const { category, image_path } = req.body;
+
+    if (!category) {
+        return res.status(400).json({ error: 'category è obbligatorio' });
+    }
+
+    connection.query(
+        'UPDATE categories SET category = ? WHERE ID = ?',
+        [category, categoryID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'aggiornamento della categoria' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Categoria non trovata' });
+            }
+
+            if (image_path) {
+                connection.query(
+                    'SELECT ID FROM category_images WHERE categoryID = ? LIMIT 1',
+                    [categoryID],
+                    (imgError, imgResults) => {
+                        if (imgError) {
+                            console.error('Errore durante la verifica dell\'immagine:', imgError);
+                            return res.json({ message: 'Categoria aggiornata con successo' });
+                        }
+
+                        if (imgResults.length > 0) {
+                            connection.query(
+                                'UPDATE category_images SET image_path = ? WHERE ID = ?',
+                                [image_path, imgResults[0].ID],
+                                (updateImgErr) => {
+                                    if (updateImgErr) {
+                                        console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
+                                    }
+                                    res.json({ message: 'Categoria e immagine aggiornate con successo' });
+                                }
+                            );
+                        } else {
+                            connection.query(
+                                'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
+                                [image_path, categoryID],
+                                (insertImgErr) => {
+                                    if (insertImgErr) {
+                                        console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
+                                    }
+                                    res.json({ message: 'Categoria e immagine aggiornate con successo' });
+                                }
+                            );
+                        }
+                    }
+                );
+            } else {
+                res.json({ message: 'Categoria aggiornata con successo' });
             }
         }
     );
