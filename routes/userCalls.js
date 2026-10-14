@@ -168,6 +168,54 @@ router.post('/carts', (req, res) => {
     });
 });
 
+router.delete('/carts/:productID', (req, res) => {
+    const userID = req.user.ID;
+    const productID = req.params.productID;
+
+    connection.query('SELECT ID FROM carts WHERE userID = ?', [userID], (error, cartResults) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            return res.status(500).json({ error: 'Errore durante il recupero del carrello' });
+        }
+        if (cartResults.length === 0) {
+            return res.status(404).json({ error: 'Carrello non trovato' });
+        }
+
+        const cartID = cartResults[0].ID;
+
+        connection.query('SELECT productID FROM products WHERE ID = ?', [productID], (error, prodResults) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante il recupero del prodotto' });
+            }
+            if (prodResults.length === 0) {
+                return res.status(404).json({ error: 'Prodotto non trovato' });
+            }
+
+            // Se il prodotto non ha un padre è un prodotto principale: vanno rimossi anche i suoi accessori
+            const isAccessory = prodResults[0].productID !== null;
+
+            const query = isAccessory
+                ? 'DELETE FROM cart_details WHERE cartID = ? AND productID = ?'
+                : 'DELETE FROM cart_details WHERE cartID = ? AND (productID = ? OR productID IN (SELECT ID FROM products WHERE productID = ?))';
+            const params = isAccessory
+                ? [cartID, productID]
+                : [cartID, productID, productID];
+
+            connection.query(query, params, (error, result) => {
+                if (error) {
+                    console.error('Errore durante l\'esecuzione della query:', error);
+                    return res.status(500).json({ error: 'Errore durante la rimozione dal carrello' });
+                }
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({ error: 'Prodotto non trovato nel carrello' });
+                }
+                res.json({ message: 'Prodotto rimosso dal carrello' });
+            });
+        });
+    });
+});
+
 //#endregion
 
 //#region orders

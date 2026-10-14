@@ -488,6 +488,7 @@
                     <li><a href="#user-update-me"><span class="nav-badge method-PUT">PUT</span> /user/me</a></li>
                     <li><a href="#user-get-cart"><span class="nav-badge method-GET">GET</span> /user/carts</a></li>
                     <li><a href="#user-add-cart"><span class="nav-badge method-POST">POST</span> /user/carts</a></li>
+                    <li><a href="#user-del-cart"><span class="nav-badge method-DELETE">DELETE</span> /user/carts/:id</a></li>
                     <li><a href="#user-get-orders"><span class="nav-badge method-GET">GET</span> /user/orders</a></li>
                     <li><a href="#user-get-order-id"><span class="nav-badge method-GET">GET</span> /user/orders/:id</a></li>
                     <li><a href="#user-create-order"><span class="nav-badge method-POST">POST</span> /user/orders</a></li>
@@ -898,6 +899,43 @@
                 </div>
             </article>
 
+            <!-- DELETE /api/user/carts/:productID -->
+            <article class="api-card" id="user-del-cart">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="endpoint-path">/api/user/carts/<span class="param">:productID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Rimuove un prodotto dal carrello dell'utente. Se il prodotto rimosso è un prodotto principale, vengono eliminati automaticamente anche tutti i suoi accessori presenti nel carrello; se invece è un accessorio, viene rimosso solo quello.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">productID</span> <span class="badge-required">*</span></td><td>number</td><td>ID del prodotto (o accessorio) da rimuovere dal carrello</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="callout-box">
+                        <strong>Comportamento:</strong> il "padre" di un prodotto è determinato dal campo <code>products.productID</code>: se è <code>NULL</code> il prodotto è principale (vengono rimossi anche i suoi accessori dal carrello), altrimenti è un accessorio (viene rimosso solo quello).
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "message": "Prodotto rimosso dal carrello"
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
             <!-- GET /api/user/orders -->
             <article class="api-card" id="user-get-orders">
                 <div class="api-card-header">
@@ -1233,7 +1271,7 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Restituisce l'elenco generale degli ordini effettuati con filtri opzionali.</p>
+                    <p class="endpoint-summary">Restituisce l'elenco generale degli ordini effettuati con filtri opzionali. Se viene specificato <code>orderID</code>, ogni ordine include anche l'elenco dettagliato dei prodotti acquistati con i relativi accessori annidati.</p>
 
                     <div class="params-section">
                         <div class="params-title">Query Parameters (Opzionali)</div>
@@ -1241,13 +1279,55 @@
                             <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
                                 <tr><td><span class="field-name">userID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>Filtra gli ordini per un determinato utente</td></tr>
-                                <tr><td><span class="field-name">orderID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>Filtra per specifico numero d'ordine</td></tr>
+                                <tr><td><span class="field-name">orderID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>Filtra per specifico numero d'ordine e abilita il dettaglio prodotti/accessori nella risposta</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="callout-box callout-owner">
                         • <strong>OWNER:</strong> Può visualizzare gli ordini di qualsiasi utente nel database.<br>
                         • <strong>ADMIN:</strong> Non può visualizzare gli ordini di altri admin o dell'owner.
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK (senza orderID)</span></div>
+                        <pre><code>[
+  {
+    "ID": 5,
+    "date": "2026-01-10",
+    "status": "Spedito",
+    "address": "Via Roma 10, Centro, 43121, Parma, PR, Italia",
+    "products": []
+  }
+]</code></pre>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK (con ?orderID=5)</span></div>
+                        <pre><code>[
+  {
+    "ID": 5,
+    "date": "2026-01-10",
+    "status": "Spedito",
+    "address": "Via Roma 10, Centro, 43121, Parma, PR, Italia",
+    "products": [
+      {
+        "ID": 10,
+        "name": "Tavolo Legno",
+        "price": 299.99,
+        "image": "https://internopuro.alwaysdata.net/img/prods/tavolo.jpg",
+        "quantity": 1,
+        "accessories": [
+          {
+            "ID": 15,
+            "name": "Gamba Rinforzata",
+            "price": 19.99,
+            "quantity": 4
+          }
+        ]
+      }
+    ]
+  }
+]</code></pre>
                     </div>
                 </div>
             </article>
