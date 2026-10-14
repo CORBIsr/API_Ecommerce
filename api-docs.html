@@ -911,7 +911,7 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Rimuove un prodotto dal carrello dell'utente. Se il prodotto rimosso è un prodotto principale, vengono eliminati automaticamente anche tutti i suoi accessori presenti nel carrello; se invece è un accessorio, viene rimosso solo quello.</p>
+                    <p class="endpoint-summary">Rimuove un prodotto dal carrello dell'utente, oppure ne riduce solo la quantità. Se il prodotto rimosso completamente è un prodotto principale, vengono eliminati automaticamente anche tutti i suoi accessori presenti nel carrello; se invece è un accessorio, viene rimosso solo quello.</p>
 
                     <div class="params-section">
                         <div class="params-title">Path Parameters</div>
@@ -923,12 +923,36 @@
                         </table>
                     </div>
 
+                    <div class="params-section">
+                        <div class="params-title">Body JSON (Opzionale)</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">quantity</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>Quantità da togliere (&gt;= 1). Se omessa, o se è maggiore/uguale alla quantità presente, il prodotto viene rimosso interamente dal carrello</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <div class="callout-box">
-                        <strong>Comportamento:</strong> il "padre" di un prodotto è determinato dal campo <code>products.productID</code>: se è <code>NULL</code> il prodotto è principale (vengono rimossi anche i suoi accessori dal carrello), altrimenti è un accessorio (viene rimosso solo quello).
+                        <strong>Comportamento:</strong> il "padre" di un prodotto è determinato dal campo <code>products.productID</code>: se è <code>NULL</code> il prodotto è principale (la rimozione completa elimina anche i suoi accessori dal carrello), altrimenti è un accessorio (viene rimosso solo quello). Se <code>quantity</code> è inferiore alla quantità attuale nel carrello, viene semplicemente scalata senza toccare altre righe (accessori inclusi).
                     </div>
 
                     <div class="code-container">
-                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <div class="code-header"><span>Esempio Body (rimozione parziale)</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <pre><code>{
+  "quantity": 1
+}</code></pre>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK (rimozione parziale)</span></div>
+                        <pre><code>{
+  "message": "Quantità del prodotto aggiornata nel carrello"
+}</code></pre>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK (rimozione completa)</span></div>
                         <pre><code>{
   "message": "Prodotto rimosso dal carrello"
 }</code></pre>
