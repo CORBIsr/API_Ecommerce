@@ -87,6 +87,8 @@ router.get('/carts', (req, res) => {
                 if (a.fatherID !== null) {
                     index[a.fatherID].accessories.push({
                         accessoryID: a.id,
+                        name: a.name,
+                        price: a.price,
                         quantity: a.quantity
                     })
                 }

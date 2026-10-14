@@ -10,9 +10,10 @@ router.get('/products', (req, res) => { //  /products?categoryID=1
     const categoryID = req.query.categoryID;
     let sql = `
         SELECT 
-            products.ID, products.name, products.description, products.price,
+            products.ID, products.name, products.description, products.price, categories.ID AS categoryID, categories.category AS categoryName,
             ( SELECT products_images.image_path FROM products_images WHERE products_images.productID = products.ID LIMIT 1 ) AS image
         FROM products
+        INNER JOIN categories ON products.categoryID = categories.ID
         WHERE products.productID IS NULL AND products.active = 1 ${categoryID ? `AND products.categoryID = ${categoryID}` : ""}`
     connection.query(sql, (error, results, fields) => {
         if (error) {
@@ -31,9 +32,10 @@ router.get('/products/:productID', (req, res) => {
     const productID = req.params.productID;
     connection.query(`
         SELECT
-            products.ID, products.name, products.description, products.price, products_images.image_path AS image
+            products.ID, products.name, products.description, products.price, categories.ID AS categoryID, categories.category AS categoryName, products_images.image_path AS image
         FROM products
             INNER JOIN products_images ON products_images.productID = products.ID
+            INNER JOIN categories ON products.categoryID = categories.ID
         WHERE products.ID = ? AND products.active = 1;
     `, [productID], (error, results, fields) => {
         if (error) {
@@ -47,6 +49,8 @@ router.get('/products/:productID', (req, res) => {
                 ID: results[0].ID,
                 name: results[0].name,
                 price: results[0].price,
+                categoryID: results[0].categoryID,
+                categoryName: results[0].categoryName,
                 description: results[0].description,
                 images: []
             }
