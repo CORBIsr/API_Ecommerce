@@ -75,7 +75,7 @@ router.get('/carts', (req, res) => {
                         id: p.id,
                         name: p.name,
                         price: p.price,
-                        image: p.image,
+                        image: `https://internopuro.alwaysdata.net/img/prods/${p.image}`,
                         quantity: p.quantity,
                         accessories: []
                     }
@@ -341,7 +341,7 @@ router.get('/orders/:orderID', (req, res) => {
                         ID: main.productID,
                         name: main.name,
                         price: main.price,
-                        image: main.image,
+                        image: `https://internopuro.alwaysdata.net/img/prods/${main.image}`,
                         quantity: main.quantity,
                         accessories: Accessories
                             .filter(acc => acc.fatherID === main.productID)
