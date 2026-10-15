@@ -508,7 +508,8 @@
                     <li><a href="#adm-del-user"><span class="nav-badge method-DELETE">DELETE</span> /adm/users/:id</a></li>
                     <li><a href="#adm-get-roles"><span class="nav-badge method-GET">GET</span> /adm/roles</a></li>
                     <li><a href="#adm-get-orders"><span class="nav-badge method-GET">GET</span> /adm/orders</a></li>
-                    <li><a href="#adm-del-order"><span class="nav-badge method-DELETE">DELETE</span> /adm/orders/:id</a></li>
+                    <li><a href="#adm-get-status"><span class="nav-badge method-GET">GET</span> /adm/status</a></li>
+                    <li><a href="#adm-set-order-status"><span class="nav-badge method-POST">POST</span> /adm/orders/:id</a></li>
                     <li><a href="#adm-get-prods"><span class="nav-badge method-GET">GET</span> /adm/products</a></li>
                     <li><a href="#adm-upload"><span class="nav-badge method-POST">POST</span> /adm/upload</a></li>
                     <li><a href="#adm-add-prod"><span class="nav-badge method-POST">POST</span> /adm/products</a></li>
@@ -734,6 +735,17 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 15,
+    "name": "Gamba Rinforzata",
+    "price": 19.99
+  }
+]</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -750,6 +762,17 @@
                 </div>
                 <div class="api-card-body">
                     <p class="endpoint-summary">Restituisce l'elenco delle categorie merchandise con l'URL completo dell'immagine di copertina.</p>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 1,
+    "category": "Soggiorno",
+    "image": "https://internopuro.alwaysdata.net/img/cats/soggiorno.jpg"
+  }
+]</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -808,6 +831,20 @@
                 </div>
                 <div class="api-card-body">
                     <p class="endpoint-summary">Restituisce nome e cognome dell'utente loggato associato al token.</p>
+
+                    <div class="callout-box">
+                        <strong>Nota:</strong> la risposta è un array con un solo elemento (risultato grezzo della query), non un oggetto singolo.
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "name": "Jacopo",
+    "surname": "Corbani"
+  }
+]</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -983,6 +1020,21 @@
                 </div>
                 <div class="api-card-body">
                     <p class="endpoint-summary">Restituisce la cronologia degli ordini dell'utente con stato di avanzamento, indirizzo di spedizione, totale e spese di consegna.</p>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 5,
+    "date": "2026-01-10",
+    "status": "Spedito",
+    "address": "Via Roma 10, Centro, 43121, Parma, PR, Italia",
+    "n_product": 3,
+    "total_price": 89.97,
+    "shipping_fee": 4.99
+  }
+]</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -998,7 +1050,34 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Restituisce i dati di uno specifico ordine dell'utente verificando che appartenga a lui.</p>
+                    <p class="endpoint-summary">Restituisce i dati di uno specifico ordine dell'utente verificando che appartenga a lui, con il dettaglio dei prodotti acquistati e i relativi accessori.</p>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "ID": 5,
+  "date": "2026-01-10",
+  "status": "Spedito",
+  "address": "Via Roma 10, Centro, 43121, Parma, PR, Italia",
+  "products": [
+    {
+      "ID": 10,
+      "name": "Tavolo Legno",
+      "price": 299.99,
+      "image": "https://internopuro.alwaysdata.net/img/prods/tavolo.jpg",
+      "quantity": 1,
+      "accessories": [
+        {
+          "ID": 15,
+          "name": "Gamba Rinforzata",
+          "price": 19.99,
+          "quantity": 4
+        }
+      ]
+    }
+  ]
+}</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -1042,6 +1121,21 @@
                 </div>
                 <div class="api-card-body">
                     <p class="endpoint-summary">Restituisce tutti gli indirizzi attivi (active = 1) salvati dall'utente.</p>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 1,
+    "street": "Via Roma 10",
+    "locality": "Centro",
+    "zip_code": 43121,
+    "city": "Parma",
+    "province": "PR",
+    "state": "Italia"
+  }
+]</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -1202,6 +1296,25 @@
                         • <strong>ADMIN:</strong> Può accedere solo a utenti con ruolo 2 o 3.<br>
                         • <strong>OWNER:</strong> Accesso illimitato a qualsiasi ID utente.
                     </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "name": "Mario",
+  "surname": "Rossi",
+  "role": "USER",
+  "addresses": [
+    {
+      "street": "Via Roma 10",
+      "locality": "Centro",
+      "zip_code": 43121,
+      "city": "Parma",
+      "province": "PR",
+      "state": "Italia"
+    }
+  ]
+}</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -1289,6 +1402,20 @@
                         • <strong>OWNER:</strong> Vede tutti i ruoli (0: OWNER, 1: ADMIN, 2: USER, 3: DELETED).<br>
                         • <strong>ADMIN:</strong> Vede unicamente i ruoli assegnabili 2 (USER) e 3 (DELETED).
                     </div>
+
+                    <div class="callout-box">
+                        <strong>Nota:</strong> a differenza della maggior parte delle altre chiamate, l'array è avvolto in un campo <code>results</code>.
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "results": [
+    { "ID": 2, "role": "USER" },
+    { "ID": 3, "role": "DELETED" }
+  ]
+}</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -1367,10 +1494,40 @@
             </article>
 
             <!-- DELETE /api/adm/orders/:orderID -->
-            <article class="api-card" id="adm-del-order">
+            <!-- GET /api/adm/status -->
+            <article class="api-card" id="adm-get-status">
                 <div class="api-card-header">
                     <div class="endpoint-wrapper">
-                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/adm/status</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce l'elenco di tutti gli stati d'ordine disponibili.</p>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  { "ID": 1, "status": "In attesa di conferma" },
+  { "ID": 2, "status": "Confermato" },
+  { "ID": 3, "status": "In elaborazione" },
+  { "ID": 4, "status": "Spedito" },
+  { "ID": 5, "status": "Consegnato" },
+  { "ID": 6, "status": "Annullato" }
+]</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- POST /api/adm/orders/:orderID -->
+            <article class="api-card" id="adm-set-order-status">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
                         <span class="endpoint-path">/api/adm/orders/<span class="param">:orderID</span></span>
                     </div>
                     <div class="meta-badges">
@@ -1379,7 +1536,24 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Annulla un ordine impostando il suo stato a <code>6</code> (Annullato).</p>
+                    <p class="endpoint-summary">Cambia lo stato di un ordine (sostituisce la vecchia <code>DELETE /adm/orders/:orderID</code> che annullava soltanto). Per annullare un ordine, usa <code>statusID=6</code>.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Query Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">statusID</span> <span class="badge-required">*</span></td><td>number</td><td>Nuovo ID di stato (vedi <code>GET /adm/status</code>)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "message": "Stato dell'ordine modificato"
+}</code></pre>
+                    </div>
                 </div>
             </article>
 
@@ -1607,7 +1781,8 @@
 
                     <div class="callout-box">
                         <strong>Modalità 1 — multipart/form-data:</strong> invia i campi come form-data con il file nel campo <code>image</code>.<br><br>
-                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già caricato in precedenza (es. tramite <code>POST /adm/upload</code>).
+                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già presente nella cartella delle immagini categoria.<br><br>
+                        <strong>Cartella dedicata:</strong> a differenza dei prodotti, le immagini delle categorie vengono salvate in una cartella separata, configurata con le variabili d'ambiente <code>CATEGORY_UPLOAD_DIR</code> (es. <code>/www/img/cats</code>) e <code>CATEGORY_IMAGE_BASE_URL</code> (es. <code>https://internopuro.alwaysdata.net/img/cats</code>). <code>POST /adm/upload</code> salva invece nella cartella dei <strong>prodotti</strong> e non va usato per le categorie.
                     </div>
 
                     <div class="params-section">
