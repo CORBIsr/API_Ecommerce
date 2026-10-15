@@ -36,7 +36,7 @@ router.get('/users/:userID', (req, res) => {
     connection.query(`
         SELECT
             name, surname, roles.role,
-            addresses.street, addresses.locality, addresses.zip_code, addresses.city, addresses.province, addresses.state
+            addresses.street, addresses.locality, addresses.zip_code, addresses.city, addresses.province, addresses.state, addresses.active
         FROM users
         INNER JOIN roles ON users.roleID = roles.ID
         LEFT JOIN addresses ON users.ID = addresses.userID
@@ -60,7 +60,8 @@ router.get('/users/:userID', (req, res) => {
                     zip_code: r.zip_code,
                     city: r.city,
                     province: r.province,
-                    state: r.state
+                    state: r.state,
+                    active: r.active
                 })
             })
 
