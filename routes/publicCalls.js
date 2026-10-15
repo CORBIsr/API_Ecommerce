@@ -32,7 +32,8 @@ router.get('/products/:productID', (req, res) => {
     const productID = req.params.productID;
     connection.query(`
         SELECT
-            products.ID, products.name, products.description, products.price, categories.ID AS categoryID, categories.category AS categoryName, products_images.image_path AS image
+            products.ID, products.name, products.description, products.price, categories.ID AS categoryID, categories.category AS categoryName, 
+            products_images.ID AS imageID, products_images.image_path AS image
         FROM products
             LEFT JOIN products_images ON products_images.productID = products.ID
             LEFT JOIN categories ON products.categoryID = categories.ID
@@ -55,7 +56,10 @@ router.get('/products/:productID', (req, res) => {
                 images: []
             }
             results.forEach(result => {
-                prod.images.push(`https://internopuro.alwaysdata.net/img/prods/${result.image}`)
+                prod.images.push({
+                    ID: result.imageID,
+                    path: `https://internopuro.alwaysdata.net/img/prods/${result.image}`
+                })
             });
             res.json(prod);
         }
@@ -85,7 +89,7 @@ router.get('/accessories/:productID', (req, res) => {
 router.get('/categories', (req, res) => {
     connection.query(`
         SELECT 
-            categories.ID, categories.category, category_images.image_path AS image
+            categories.ID, categories.category, category_images.ID as imageID, category_images.image_path AS image
         FROM categories
             INNER JOIN category_images ON category_images.categoryID = categories.ID;`, (error, results, fields) => {
         if (error) {
