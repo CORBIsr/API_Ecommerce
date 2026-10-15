@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const connection = require('../config/db');
+const { upload, buildImageUrl } = require('../middleware/upload');
 
 //#region users
 
@@ -262,6 +263,24 @@ router.delete('/orders/:orderID', (req, res) => {
 //#endregion
 
 //#region products
+
+router.post('/upload', (req, res) => {
+    upload.single('image')(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nessun file ricevuto (campo atteso: "image")' });
+        }
+
+        res.status(201).json({
+            message: 'Immagine caricata con successo',
+            filename: req.file.filename,
+            url: buildImageUrl(req, req.file.filename)
+        });
+    });
+});
+
 router.get('/products', (req, res) => { //  /products?categoryID=1
     const categoryID = req.query.categoryID;
     let sql = `

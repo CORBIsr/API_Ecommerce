@@ -20,6 +20,8 @@ app.get('/api/', (req, res) => {
     res.sendFile(path.join(__dirname, 'api-docs.html'));
 });
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/public', publicRoutes);
 app.use('/api/user', tokenVerifier, userRoutes);
 app.use('/api/adm', tokenVerifier, isInRole(+process.env.ADMIN_ROLE, +process.env.OWNER_ROLE), adminRoutes);

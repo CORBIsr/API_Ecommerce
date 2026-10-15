@@ -510,6 +510,7 @@
                     <li><a href="#adm-get-orders"><span class="nav-badge method-GET">GET</span> /adm/orders</a></li>
                     <li><a href="#adm-del-order"><span class="nav-badge method-DELETE">DELETE</span> /adm/orders/:id</a></li>
                     <li><a href="#adm-get-prods"><span class="nav-badge method-GET">GET</span> /adm/products</a></li>
+                    <li><a href="#adm-upload"><span class="nav-badge method-POST">POST</span> /adm/upload</a></li>
                     <li><a href="#adm-add-prod"><span class="nav-badge method-POST">POST</span> /adm/products</a></li>
                     <li><a href="#adm-update-prod"><span class="nav-badge method-PUT">PUT</span> /adm/products/:id</a></li>
                     <li><a href="#adm-del-prod"><span class="nav-badge method-DELETE">DELETE</span> /adm/products/:id</a></li>
@@ -1419,6 +1420,46 @@
     "productID": 1
   }
 ]</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <!-- POST /api/adm/upload -->
+            <article class="api-card" id="adm-upload">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-POST">POST</span>
+                        <span class="endpoint-path">/api/adm/upload</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Carica un file immagine sul server e restituisce il nome file da usare come <code>image_path</code> nelle chiamate <code>POST</code>/<code>PUT</code> di prodotti e categorie.</p>
+
+                    <div class="params-section">
+                        <div class="params-title">Body (multipart/form-data)</div>
+                        <table class="param-table">
+                            <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">image</span> <span class="badge-required">*</span></td><td>file</td><td>File immagine (max 5MB). Tipi non immagine vengono rifiutati</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="callout-box">
+                        <strong>Configurazione server:</strong> il file viene salvato nella cartella indicata dalla variabile d'ambiente <code>UPLOAD_DIR</code> (es. <code>/www/img/prods</code>, la stessa cartella già servita come immagini statiche) e l'URL restituito usa <code>IMAGE_BASE_URL</code> come prefisso. Senza queste variabili, in locale il file finisce in <code>./uploads</code> ed è servito da Express su <code>/uploads</code>.
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 201 Created</span></div>
+                        <pre><code>{
+  "message": "Immagine caricata con successo",
+  "filename": "1792058206128-881368224.png",
+  "url": "https://internopuro.alwaysdata.net/img/prods/1792058206128-881368224.png"
+}</code></pre>
                     </div>
                 </div>
             </article>
