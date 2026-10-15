@@ -9,9 +9,10 @@ const { upload, buildImageUrl } = require('../middleware/upload');
 router.get('/users', (req, res) => {
     connection.query(`
         SELECT
-            users.ID, name, surname, roles.role
+            users.ID, name, surname, roles.role, COUNT(orders.ID) AS n_orders
         FROM users
         INNER JOIN roles ON users.roleID = roles.ID
+        LEFT JOIN orders ON users.ID = orders.userID
         ${!req.isOwner ? "WHERE roles.ID IN (2, 3)" : ""}   
         GROUP BY users.ID
         ORDER BY users.roleID, users.surname, users.name;
