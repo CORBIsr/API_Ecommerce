@@ -1437,28 +1437,32 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Carica un file immagine sul server e restituisce il nome file da usare come <code>image_path</code> nelle chiamate <code>POST</code>/<code>PUT</code> di prodotti e categorie.</p>
+                    <p class="endpoint-summary">Carica una o più immagini sul server e restituisce i nomi file da usare come <code>image_path</code> nelle chiamate <code>POST</code>/<code>PUT</code> di prodotti e categorie.</p>
 
                     <div class="params-section">
                         <div class="params-title">Body (multipart/form-data)</div>
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
-                                <tr><td><span class="field-name">image</span> <span class="badge-required">*</span></td><td>file</td><td>File immagine (max 5MB). Tipi non immagine vengono rifiutati</td></tr>
+                                <tr><td><span class="field-name">images</span> <span class="badge-required">*</span></td><td>file[]</td><td>Uno o più file immagine, max 5 per richiesta (5MB ciascuno). Tipi non immagine vengono rifiutati</td></tr>
                             </tbody>
                         </table>
                     </div>
 
                     <div class="callout-box">
-                        <strong>Configurazione server:</strong> il file viene salvato nella cartella indicata dalla variabile d'ambiente <code>UPLOAD_DIR</code> (es. <code>/www/img/prods</code>, la stessa cartella già servita come immagini statiche) e l'URL restituito usa <code>IMAGE_BASE_URL</code> come prefisso. Senza queste variabili, in locale il file finisce in <code>./uploads</code> ed è servito da Express su <code>/uploads</code>.
+                        <strong>Configurazione server:</strong> i file vengono salvati nella cartella indicata dalla variabile d'ambiente <code>UPLOAD_DIR</code> (es. <code>/www/img/prods</code>, la stessa cartella già servita come immagini statiche) e l'URL restituito usa <code>IMAGE_BASE_URL</code> come prefisso. Senza queste variabili, in locale i file finiscono in <code>./uploads</code> e sono serviti da Express su <code>/uploads</code>.
                     </div>
 
                     <div class="code-container">
                         <div class="code-header"><span>Risposta 201 Created</span></div>
                         <pre><code>{
-  "message": "Immagine caricata con successo",
-  "filename": "1792058206128-881368224.png",
-  "url": "https://internopuro.alwaysdata.net/img/prods/1792058206128-881368224.png"
+  "message": "Immagini caricate con successo",
+  "images": [
+    {
+      "filename": "1792069564181-951567895.png",
+      "url": "https://internopuro.alwaysdata.net/img/prods/1792069564181-951567895.png"
+    }
+  ]
 }</code></pre>
                     </div>
                 </div>
@@ -1477,11 +1481,11 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Crea un nuovo prodotto nel catalogo. Supporta due modalità per l'immagine: caricarla direttamente nella stessa richiesta, oppure riferire un file già caricato in precedenza.</p>
+                    <p class="endpoint-summary">Crea un nuovo prodotto nel catalogo. Supporta due modalità per le immagini: caricarle direttamente nella stessa richiesta (anche più di una), oppure riferire un file già caricato in precedenza.</p>
 
                     <div class="callout-box">
-                        <strong>Modalità 1 — multipart/form-data (consigliata):</strong> invia i campi come form-data con il file nel campo <code>image</code>. Il server lo salva e collega automaticamente il filename al prodotto appena creato.<br><br>
-                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già caricato in precedenza (es. tramite <code>POST /adm/upload</code>).
+                        <strong>Modalità 1 — multipart/form-data (consigliata):</strong> invia i campi come form-data con uno o più file nel campo <code>images</code> (max 5). Il server li salva e li collega automaticamente al prodotto appena creato.<br><br>
+                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già caricato in precedenza (es. tramite <code>POST /adm/upload</code>) — una sola immagine.
                     </div>
 
                     <div class="params-section">
@@ -1493,18 +1497,21 @@
                                 <tr><td><span class="field-name">price</span> <span class="badge-required">*</span></td><td>number</td><td>Prezzo (es. <code>49.90</code>)</td></tr>
                                 <tr><td><span class="field-name">description</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Descrizione dettagliata</td></tr>
                                 <tr><td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID della categoria di appartenenza</td></tr>
-                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: file immagine da caricare (max 5MB)</td></tr>
+                                <tr><td><span class="field-name">images</span> <span class="badge-optional">opzionale</span></td><td>file[]</td><td>Solo modalità multipart: una o più immagini da caricare (max 5)</td></tr>
                                 <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome di un file immagine già caricato</td></tr>
                             </tbody>
                         </table>
                     </div>
 
                     <div class="code-container">
-                        <div class="code-header"><span>Risposta 201 Created (con immagine)</span></div>
+                        <div class="code-header"><span>Risposta 201 Created (con immagini)</span></div>
                         <pre><code>{
   "message": "Prodotto creato con successo",
   "productID": 42,
-  "image": "https://internopuro.alwaysdata.net/img/prods/1792068550189-357119590.png"
+  "images": [
+    "https://internopuro.alwaysdata.net/img/prods/1792069568190-565196933.png",
+    "https://internopuro.alwaysdata.net/img/prods/1792069568190-278138424.png"
+  ]
 }</code></pre>
                     </div>
                 </div>
@@ -1523,7 +1530,13 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Modifica e aggiorna completamente un prodotto e la sua immagine correlata.</p>
+                    <p class="endpoint-summary">Modifica i dati del prodotto. Supporta due modalità per le immagini: caricarne di nuove direttamente (si <strong>aggiungono</strong> alla galleria esistente), oppure sostituire l'unica immagine esistente riferendo un file già caricato.</p>
+
+                    <div class="callout-box">
+                        <strong>Modalità 1 — multipart/form-data:</strong> uno o più file nel campo <code>images</code> (max 5) vengono caricati e <strong>aggiunti</strong> alle immagini già collegate al prodotto (non le sostituiscono).<br><br>
+                        <strong>Modalità 2 — application/json:</strong> <code>image_path</code> sostituisce l'immagine esistente se ce n'è già una, altrimenti ne inserisce una nuova — comportamento storico, pensato per un prodotto con una sola immagine.
+                    </div>
+
                     <div class="params-section">
                         <div class="params-title">Path Parameters</div>
                         <table class="param-table">
@@ -1534,7 +1547,7 @@
                         </table>
                     </div>
                     <div class="params-section">
-                        <div class="params-title">Body JSON Richiesto</div>
+                        <div class="params-title">Body (multipart/form-data oppure application/json)</div>
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
@@ -1542,12 +1555,13 @@
                                 <tr><td><span class="field-name">price</span> <span class="badge-required">*</span></td><td>number</td><td>Prezzo aggiornato</td></tr>
                                 <tr><td><span class="field-name">description</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Descrizione</td></tr>
                                 <tr><td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID della categoria</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine (es. <code>tavolo_lux.jpg</code>)</td></tr>
+                                <tr><td><span class="field-name">images</span> <span class="badge-optional">opzionale</span></td><td>file[]</td><td>Solo modalità multipart: una o più immagini da aggiungere (max 5)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome file immagine, sostituisce quella esistente (es. <code>tavolo_lux.jpg</code>)</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="code-container">
-                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <div class="code-header"><span>Esempio Body (modalità JSON)</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
                         <pre><code>{
   "name": "Tavolo Legno Lux",
   "price": 349.99,
@@ -1589,17 +1603,32 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Crea una nuova categoria merceologica con eventuale immagine associata.</p>
+                    <p class="endpoint-summary">Crea una nuova categoria merceologica con eventuale immagine associata (una sola immagine per categoria).</p>
+
+                    <div class="callout-box">
+                        <strong>Modalità 1 — multipart/form-data:</strong> invia i campi come form-data con il file nel campo <code>image</code>.<br><br>
+                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già caricato in precedenza (es. tramite <code>POST /adm/upload</code>).
+                    </div>
 
                     <div class="params-section">
-                        <div class="params-title">Body JSON Richiesto</div>
+                        <div class="params-title">Body (multipart/form-data oppure application/json)</div>
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
                                 <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria (es. <code>Sedie</code>)</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine categoria</td></tr>
+                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: immagine della categoria (max 5MB)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome di un file immagine già caricato</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 201 Created (con immagine)</span></div>
+                        <pre><code>{
+  "message": "Categoria creata con successo",
+  "categoryID": 17,
+  "image": "https://internopuro.alwaysdata.net/img/cats/1792069967457-235906888.png"
+}</code></pre>
                     </div>
                 </div>
             </article>
@@ -1617,7 +1646,7 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Modifica e aggiorna completamente una categoria e la sua immagine associata.</p>
+                    <p class="endpoint-summary">Modifica e aggiorna completamente una categoria. Se viene fornita una nuova immagine (in qualsiasi modalità), <strong>sostituisce</strong> quella esistente.</p>
                     <div class="params-section">
                         <div class="params-title">Path Parameters</div>
                         <table class="param-table">
@@ -1628,17 +1657,18 @@
                         </table>
                     </div>
                     <div class="params-section">
-                        <div class="params-title">Body JSON Richiesto</div>
+                        <div class="params-title">Body (multipart/form-data oppure application/json)</div>
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
                                 <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria aggiornata</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine aggiornata</td></tr>
+                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: nuova immagine, sostituisce quella esistente</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome file immagine, sostituisce quella esistente</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="code-container">
-                        <div class="code-header"><span>Esempio Body</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <div class="code-header"><span>Esempio Body (modalità JSON)</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
                         <pre><code>{
   "category": "Zona Giorno",
   "image_path": "zona_giorno.jpg"

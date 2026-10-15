@@ -108,65 +108,42 @@ router.post('/carts', (req, res) => {
         return res.status(400).json({ error: 'id_prodotto e quantita (>= 1) sono obbligatori' });
     }
 
-    // Cerca il carrello dell'utente o lo crea
-    connection.query('SELECT ID FROM carts WHERE userID = ?', [userID], (error, results) => {
+    // Crea il carrello dell'utente se non esiste. INSERT IGNORE si appoggia al vincolo
+    // UNIQUE su carts.userID per evitare che richieste concorrenti (es. doppio click)
+    // creino più carrelli per lo stesso utente.
+    connection.query('INSERT IGNORE INTO carts (userID) VALUES (?)', [userID], (error) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
-            return res.status(500).json({ error: 'Errore durante il recupero del carrello' });
+            return res.status(500).json({ error: 'Errore durante la creazione del carrello' });
         }
 
-        const insert = (cartID) => {
+        connection.query('SELECT ID FROM carts WHERE userID = ?', [userID], (error, results) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante il recupero del carrello' });
+            }
+
+            const cartID = results[0].ID;
+
+            // Inserisce la riga o, se esiste già (vincolo UNIQUE su cartID+productID),
+            // somma atomicamente la quantità: evita duplicati su richieste concorrenti.
             connection.query(
-                'SELECT ID, qty FROM cart_details WHERE cartID = ? AND productID = ?',
-                [cartID, productID],
-                (error, existing) => {
+                'INSERT INTO cart_details (cartID, productID, qty) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE qty = qty + VALUES(qty)',
+                [cartID, productID, quantity],
+                (error, result) => {
                     if (error) {
                         console.error('Errore durante l\'esecuzione della query:', error);
-                        return res.status(500).json({ error: 'Errore durante il controllo del carrello' });
+                        return res.status(500).json({ error: 'Errore durante l\'aggiunta al carrello' });
                     }
-
-                    if (existing.length > 0) {
-                        const new_quantity = existing[0].qty + quantity;
-                        connection.query(
-                            'UPDATE cart_details SET qty = ? WHERE ID = ?',
-                            [new_quantity, existing[0].ID],
-                            (error) => {
-                                if (error) {
-                                    console.error('Errore durante l\'esecuzione della query:', error);
-                                    return res.status(500).json({ error: 'Errore durante l\'aggiornamento del carrello' });
-                                }
-                                res.status(200).json({ message: 'Quantità aggiornata nel carrello' });
-                            }
-                        );
+                    // MySQL restituisce affectedRows: 1 per un insert, 2 per un update via ON DUPLICATE KEY
+                    if (result.affectedRows > 1) {
+                        res.status(200).json({ message: 'Quantità aggiornata nel carrello' });
                     } else {
-                        connection.query(
-                            'INSERT INTO cart_details (cartID, productID, qty) VALUES (?, ?, ?)',
-                            [cartID, productID, quantity],
-                            (error) => {
-                                if (error) {
-                                    console.error('Errore durante l\'esecuzione della query:', error);
-                                    return res.status(500).json({ error: 'Errore durante l\'aggiunta al carrello' });
-                                }
-                                res.status(201).json({ message: 'Prodotto aggiunto al carrello' });
-                            }
-                        );
+                        res.status(201).json({ message: 'Prodotto aggiunto al carrello' });
                     }
                 }
             );
-        };
-
-        if (results.length > 0) {
-            insert(results[0].ID);
-        } else {
-            // Crea il carrello per l'utente
-            connection.query('INSERT INTO carts (userID) VALUES (?)', [userID], (error, result) => {
-                if (error) {
-                    console.error('Errore durante l\'esecuzione della query:', error);
-                    return res.status(500).json({ error: 'Errore durante la creazione del carrello' });
-                }
-                insert(result.insertId);
-            });
-        }
+        });
     });
 });
 
