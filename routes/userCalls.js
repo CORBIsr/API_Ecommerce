@@ -244,7 +244,7 @@ router.get('/orders', (req, res) => {
             order_status.status,
             CONCAT(addresses.street, ', ', addresses.locality, ', ', addresses.zip_code, ', ', addresses.city, ', ', addresses.province, ', ', addresses.state) AS address,
             SUM(order_datails.qty) AS n_product,
-            SUM(order_datails.price) AS total_price,
+            SUM(order_datails.price * order_datails.qty) AS total_price,
             orders.shipping_fee
         FROM orders
         INNER JOIN order_status ON orders.statusID = order_status.ID
@@ -253,7 +253,7 @@ router.get('/orders', (req, res) => {
         INNER JOIN users ON orders.userID = users.ID
         WHERE users.ID = ?
         GROUP BY orders.ID
-        ORDER BY order_status.ID, orders.date DESC;
+        ORDER BY orders.ID DESC;
     `, [userID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
