@@ -36,7 +36,7 @@ router.get('/products/:productID', (req, res) => {
         FROM products
             INNER JOIN products_images ON products_images.productID = products.ID
             INNER JOIN categories ON products.categoryID = categories.ID
-        WHERE products.ID = ? AND products.active = 1;
+        WHERE products.ID = ?;
     `, [productID], (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);

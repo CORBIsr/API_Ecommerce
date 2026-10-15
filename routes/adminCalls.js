@@ -262,6 +262,22 @@ router.delete('/orders/:orderID', (req, res) => {
 //#endregion
 
 //#region products
+router.get('/products', (req, res) => { //  /products?categoryID=1
+    const categoryID = req.query.categoryID;
+    let sql = `
+        SELECT 
+            products.ID, products.name, products.price, categories.category AS categoryName, products.productID
+        FROM products
+        INNER JOIN categories ON products.categoryID = categories.ID`
+    connection.query(sql, (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
+        }
+    });
+});
 
 router.post('/products', (req, res) => {
     const { name, description, price, categoryID, image_path } = req.body;

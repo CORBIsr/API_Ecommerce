@@ -509,6 +509,7 @@
                     <li><a href="#adm-get-roles"><span class="nav-badge method-GET">GET</span> /adm/roles</a></li>
                     <li><a href="#adm-get-orders"><span class="nav-badge method-GET">GET</span> /adm/orders</a></li>
                     <li><a href="#adm-del-order"><span class="nav-badge method-DELETE">DELETE</span> /adm/orders/:id</a></li>
+                    <li><a href="#adm-get-prods"><span class="nav-badge method-GET">GET</span> /adm/products</a></li>
                     <li><a href="#adm-add-prod"><span class="nav-badge method-POST">POST</span> /adm/products</a></li>
                     <li><a href="#adm-update-prod"><span class="nav-badge method-PUT">PUT</span> /adm/products/:id</a></li>
                     <li><a href="#adm-del-prod"><span class="nav-badge method-DELETE">DELETE</span> /adm/products/:id</a></li>
@@ -670,7 +671,7 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Restituisce i dettagli del singolo prodotto con l'array completo di tutte le sue immagini collegate.</p>
+                    <p class="endpoint-summary">Restituisce i dettagli del singolo prodotto con l'array completo di tutte le sue immagini collegate. Funziona anche per prodotti non più attivi (<code>active = 0</code>).</p>
 
                     <div class="params-section">
                         <div class="params-title">Path Parameters</div>
@@ -1378,6 +1379,47 @@
                 </div>
                 <div class="api-card-body">
                     <p class="endpoint-summary">Annulla un ordine impostando il suo stato a <code>6</code> (Annullato).</p>
+                </div>
+            </article>
+
+            <!-- GET /api/adm/products -->
+            <article class="api-card" id="adm-get-prods">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-GET">GET</span>
+                        <span class="endpoint-path">/api/adm/products</span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-admin">Admin</span>
+                        <span class="role-pill role-owner">Owner</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Restituisce l'elenco completo di tutti i prodotti (inclusi quelli disattivati e gli accessori), pensato per la gestione del catalogo lato admin.</p>
+
+                    <div class="callout-box">
+                        <strong>Nota:</strong> a differenza di <code>GET /api/public/products</code>, questa chiamata non filtra per <code>active</code> né per prodotti principali: il campo <code>productID</code> nella risposta è il riferimento al prodotto padre (self-FK), <code>null</code> per i prodotti principali e valorizzato per gli accessori.
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>[
+  {
+    "ID": 1,
+    "name": "Tavolo Legno",
+    "price": 299.99,
+    "categoryName": "Soggiorno",
+    "productID": null
+  },
+  {
+    "ID": 15,
+    "name": "Gamba Rinforzata",
+    "price": 19.99,
+    "categoryName": "Soggiorno",
+    "productID": 1
+  }
+]</code></pre>
+                    </div>
                 </div>
             </article>
 
