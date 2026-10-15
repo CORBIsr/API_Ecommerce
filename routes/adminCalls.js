@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 const connection = require('../config/db');
-const { upload, buildImageUrl } = require('../middleware/upload');
+const {
+    products: { upload, buildImageUrl, buildImageUrls },
+    categories: { upload: uploadCategory, buildImageUrl: buildCategoryImageUrl }
+} = require('../middleware/upload');
 
 //#region users
 
@@ -151,10 +154,10 @@ router.get('/orders', (req, res) => {
                 order_datails.qty AS quantity,
                 products.productID AS fatherID,
                 SUM(order_datails.qty) OVER(PARTITION BY orders.ID) AS n_products,
-                SUM(order_datails.price) OVER(PARTITION BY orders.ID) AS total_price,
+                SUM(order_datails.price * order_datails.qty) OVER(PARTITION BY orders.ID) AS total_price,
                 `: `
                 SUM(order_datails.qty) AS n_products,
-                SUM(order_datails.price) AS total_price,
+                SUM(order_datails.price * order_datails.qty) AS total_price,
                 `}
             orders.shipping_fee
         FROM orders
@@ -242,23 +245,38 @@ router.get('/orders', (req, res) => {
 
 });
 
-router.delete('/orders/:orderID', (req, res) => {
-    const orderID = req.params.orderID;
+router.get('/status', (req, res) => {
 
-    connection.query(
-        'UPDATE orders SET statusID = 6 WHERE ID = ?',
-        [orderID],
-        (error, result) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                return res.status(500).json({ error: 'Errore durante l\'aggiornamento dello stato dell\'ordine' });
-            }
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Ordine non trovato' });
-            }
-            res.json({ message: 'Ordine annullato con successo', statusID: 6 });
+    connection.query("SELECT * FROM order_status", (error, results, fields) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
+        } else {
+            res.json(results);
         }
-    );
+    });
+
+});
+
+router.post('/orders/:orderID', (req, res) => {
+    const orderID = req.params.orderID;
+    const statusID = req.query.statusID;
+
+    if (!statusID) {
+        return res.status(400).json({ error: 'statusID obbligatorio' });
+    }
+
+    connection.query("UPDATE orders SET statusID = ? WHERE ID = ?", [statusID, orderID], (error, results) => {
+        if (error) {
+            console.error('Errore durante l\'esecuzione della query:', error);
+            return res.status(500).json({ error: 'Errore durante l\'aggiornamento dell\'ordine' });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ error: 'Ordine non trovato' });
+        }
+        res.json({ message: 'Stato dell\'ordine modificato' });
+    });
+
 });
 
 //#endregion
@@ -266,18 +284,20 @@ router.delete('/orders/:orderID', (req, res) => {
 //#region products
 
 router.post('/upload', (req, res) => {
-    upload.single('image')(req, res, (err) => {
+    upload.array('images', 5)(req, res, (err) => {
         if (err) {
             return res.status(400).json({ error: err.message });
         }
-        if (!req.file) {
-            return res.status(400).json({ error: 'Nessun file ricevuto (campo atteso: "image")' });
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'Nessun file ricevuto (campo atteso: "images")' });
         }
 
         res.status(201).json({
-            message: 'Immagine caricata con successo',
-            filename: req.file.filename,
-            url: buildImageUrl(req, req.file.filename)
+            message: 'Immagini caricate con successo',
+            images: req.files.map(file => ({
+                filename: file.filename,
+                url: buildImageUrl(req, file.filename)
+            }))
         });
     });
 });
@@ -286,7 +306,7 @@ router.get('/products', (req, res) => { //  /products?categoryID=1
     const categoryID = req.query.categoryID;
     let sql = `
         SELECT 
-            products.ID, products.name, products.price, categories.category AS categoryName, products.productID
+            products.ID, products.name, products.price, products.active, categories.category AS categoryName, products.productID
         FROM products
         LEFT JOIN categories ON products.categoryID = categories.ID`
     connection.query(sql, (error, results, fields) => {
@@ -300,40 +320,56 @@ router.get('/products', (req, res) => { //  /products?categoryID=1
 });
 
 router.post('/products', (req, res) => {
-    const { name, description, price, categoryID, image_path } = req.body;
+    // Accetta sia JSON con "image_path" (immagine già caricata in precedenza)
+    // sia multipart/form-data con uno o più file nel campo "images" (max 5).
+    upload.array('images', 5)(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.status(400).json({ error: uploadErr.message });
+        }
 
-    if (!name || price === undefined) {
-        return res.status(400).json({ error: 'name e price sono obbligatori' });
-    }
+        const { name, description, price, categoryID } = req.body;
+        const uploadedFiles = req.files || [];
+        const imagePaths = uploadedFiles.length > 0
+            ? uploadedFiles.map(file => file.filename)
+            : (req.body.image_path ? [req.body.image_path] : []);
 
-    connection.query(
-        'INSERT INTO products (name, description, price, categoryID) VALUES (?, ?, ?, ?)',
-        [name, description || null, price, categoryID || null],
-        (error, result) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                return res.status(500).json({ error: 'Errore durante l\'inserimento del prodotto' });
-            }
+        if (!name || price === undefined || price === '') {
+            return res.status(400).json({ error: 'name e price sono obbligatori' });
+        }
 
-            const productID = result.insertId;
+        connection.query(
+            'INSERT INTO products (name, description, price, categoryID) VALUES (?, ?, ?, ?)',
+            [name, description || null, price, categoryID || null],
+            (error, result) => {
+                if (error) {
+                    console.error('Errore durante l\'esecuzione della query:', error);
+                    return res.status(500).json({ error: 'Errore durante l\'inserimento del prodotto' });
+                }
 
-            if (image_path) {
+                const productID = result.insertId;
+
+                if (imagePaths.length === 0) {
+                    return res.status(201).json({ message: 'Prodotto creato con successo', productID });
+                }
+
                 connection.query(
-                    'INSERT INTO products_images (image_path, productID) VALUES (?, ?)',
-                    [image_path, productID],
+                    'INSERT INTO products_images (image_path, productID) VALUES ?',
+                    [imagePaths.map(imagePath => [imagePath, productID])],
                     (error) => {
                         if (error) {
                             console.error('Errore durante l\'esecuzione della query:', error);
-                            return res.status(500).json({ error: 'Prodotto creato ma errore nel salvataggio dell\'immagine' });
+                            return res.status(500).json({ error: 'Prodotto creato ma errore nel salvataggio delle immagini' });
                         }
-                        res.status(201).json({ message: 'Prodotto creato con successo', productID });
+                        res.status(201).json({
+                            message: 'Prodotto creato con successo',
+                            productID,
+                            images: buildImageUrls(req, imagePaths)
+                        });
                     }
                 );
-            } else {
-                res.status(201).json({ message: 'Prodotto creato con successo', productID });
             }
-        }
-    );
+        );
+    });
 });
 
 router.delete('/products/:productID', (req, res) => {
@@ -356,65 +392,139 @@ router.delete('/products/:productID', (req, res) => {
 });
 
 router.put('/products/:productID', (req, res) => {
-    const productID = req.params.productID;
-    const { name, description, price, categoryID, image_path } = req.body;
-
-    if (!name || price === undefined) {
-        return res.status(400).json({ error: 'name e price sono obbligatori' });
-    }
-
-    connection.query(
-        'UPDATE products SET name = ?, description = ?, price = ?, categoryID = ? WHERE ID = ? AND active = 1',
-        [name, description || null, price, categoryID || null, productID],
-        (error, result) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                return res.status(500).json({ error: 'Errore durante l\'aggiornamento del prodotto' });
-            }
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Prodotto non trovato o non attivo' });
-            }
-
-            if (image_path) {
-                connection.query(
-                    'SELECT ID FROM products_images WHERE productID = ? LIMIT 1',
-                    [productID],
-                    (imgError, imgResults) => {
-                        if (imgError) {
-                            console.error('Errore durante la verifica dell\'immagine:', imgError);
-                            return res.json({ message: 'Prodotto aggiornato con successo' });
-                        }
-
-                        if (imgResults.length > 0) {
-                            connection.query(
-                                'UPDATE products_images SET image_path = ? WHERE ID = ?',
-                                [image_path, imgResults[0].ID],
-                                (updateImgErr) => {
-                                    if (updateImgErr) {
-                                        console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
-                                    }
-                                    res.json({ message: 'Prodotto e immagine aggiornati con successo' });
-                                }
-                            );
-                        } else {
-                            connection.query(
-                                'INSERT INTO products_images (image_path, productID) VALUES (?, ?)',
-                                [image_path, productID],
-                                (insertImgErr) => {
-                                    if (insertImgErr) {
-                                        console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
-                                    }
-                                    res.json({ message: 'Prodotto e immagine aggiornati con successo' });
-                                }
-                            );
-                        }
-                    }
-                );
-            } else {
-                res.json({ message: 'Prodotto aggiornato con successo' });
-            }
+    // Multipart con uno o più file in "images" (max 5): le aggiunge alla galleria del prodotto.
+    // "deleteImageIDs": array di ID (products_images.ID) da rimuovere dalla galleria.
+    // JSON con "image_path": comportamento storico, sostituisce l'unica immagine esistente.
+    upload.array('images', 5)(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.status(400).json({ error: uploadErr.message });
         }
-    );
+
+        const productID = req.params.productID;
+        const { name, description, price, categoryID, image_path } = req.body;
+        const uploadedFiles = req.files || [];
+
+        if (!name || price === undefined || price === '') {
+            return res.status(400).json({ error: 'name e price sono obbligatori' });
+        }
+
+        // Normalizza deleteImageIDs in un array di interi, sia che arrivi come array JSON
+        // sia come campo/i ripetuti di un form multipart (in quel caso multer lo mette in
+        // req.body come stringa singola o array di stringhe).
+        let deleteImageIDs = [];
+        if (req.body.deleteImageIDs !== undefined) {
+            const raw = Array.isArray(req.body.deleteImageIDs) ? req.body.deleteImageIDs : [req.body.deleteImageIDs];
+            deleteImageIDs = raw.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        }
+
+        connection.query(
+            'UPDATE products SET name = ?, description = ?, price = ?, categoryID = ? WHERE ID = ? AND active = 1',
+            [name, description || null, price, categoryID || null, productID],
+            (error, result) => {
+                if (error) {
+                    console.error('Errore durante l\'esecuzione della query:', error);
+                    return res.status(500).json({ error: 'Errore durante l\'aggiornamento del prodotto' });
+                }
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({ error: 'Prodotto non trovato o non attivo' });
+                }
+
+                const applyImageChanges = () => {
+                    if (uploadedFiles.length > 0) {
+                        const imagePaths = uploadedFiles.map(file => file.filename);
+                        connection.query(
+                            'INSERT INTO products_images (image_path, productID) VALUES ?',
+                            [imagePaths.map(imagePath => [imagePath, productID])],
+                            (imgError) => {
+                                if (imgError) {
+                                    console.error('Errore durante l\'inserimento delle immagini:', imgError);
+                                    return res.json({ message: 'Prodotto aggiornato con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
+                                }
+                                res.json({
+                                    message: 'Prodotto aggiornato e immagini aggiunte con successo',
+                                    ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }),
+                                    images: buildImageUrls(req, imagePaths)
+                                });
+                            }
+                        );
+                    } else if (image_path) {
+                        connection.query(
+                            'SELECT ID FROM products_images WHERE productID = ? LIMIT 1',
+                            [productID],
+                            (imgError, imgResults) => {
+                                if (imgError) {
+                                    console.error('Errore durante la verifica dell\'immagine:', imgError);
+                                    return res.json({ message: 'Prodotto aggiornato con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
+                                }
+
+                                if (imgResults.length > 0) {
+                                    connection.query(
+                                        'UPDATE products_images SET image_path = ? WHERE ID = ?',
+                                        [image_path, imgResults[0].ID],
+                                        (updateImgErr) => {
+                                            if (updateImgErr) {
+                                                console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
+                                            }
+                                            res.json({ message: 'Prodotto e immagine aggiornati con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
+                                        }
+                                    );
+                                } else {
+                                    connection.query(
+                                        'INSERT INTO products_images (image_path, productID) VALUES (?, ?)',
+                                        [image_path, productID],
+                                        (insertImgErr) => {
+                                            if (insertImgErr) {
+                                                console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
+                                            }
+                                            res.json({ message: 'Prodotto e immagine aggiornati con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
+                                        }
+                                    );
+                                }
+                            }
+                        );
+                    } else {
+                        res.json({ message: 'Prodotto aggiornato con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
+                    }
+                };
+
+                if (deleteImageIDs.length > 0) {
+                    // Verifica prima quali ID appartengono davvero a questo prodotto, così la
+                    // risposta riporta solo le immagini effettivamente rimosse (non quelle di
+                    // altri prodotti, bloccate dallo scoping su productID).
+                    connection.query(
+                        'SELECT ID FROM products_images WHERE productID = ? AND ID IN (?)',
+                        [productID, deleteImageIDs],
+                        (selError, matchingRows) => {
+                            if (selError) {
+                                console.error('Errore durante la verifica delle immagini da rimuovere:', selError);
+                                return res.status(500).json({ error: 'Errore durante la rimozione delle immagini' });
+                            }
+
+                            deleteImageIDs = matchingRows.map(row => row.ID);
+
+                            if (deleteImageIDs.length === 0) {
+                                return applyImageChanges();
+                            }
+
+                            connection.query(
+                                'DELETE FROM products_images WHERE productID = ? AND ID IN (?)',
+                                [productID, deleteImageIDs],
+                                (delError) => {
+                                    if (delError) {
+                                        console.error('Errore durante la rimozione delle immagini:', delError);
+                                        return res.status(500).json({ error: 'Errore durante la rimozione delle immagini' });
+                                    }
+                                    applyImageChanges();
+                                }
+                            );
+                        }
+                    );
+                } else {
+                    applyImageChanges();
+                }
+            }
+        );
+    });
 });
 
 //#endregion
@@ -422,102 +532,120 @@ router.put('/products/:productID', (req, res) => {
 //#region categories
 
 router.post('/categories', (req, res) => {
-    const { category, image_path } = req.body;
-
-    if (!category) {
-        return res.status(400).json({ error: 'category è obbligatorio' });
-    }
-
-    connection.query(
-        'INSERT INTO categories (category) VALUES (?)',
-        [category],
-        (error, result) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                return res.status(500).json({ error: 'Errore durante l\'inserimento della categoria' });
-            }
-
-            const categoryID = result.insertId;
-
-            if (image_path) {
-                connection.query(
-                    'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
-                    [image_path, categoryID],
-                    (error) => {
-                        if (error) {
-                            console.error('Errore durante l\'esecuzione della query:', error);
-                            return res.status(500).json({ error: 'Categoria creata ma errore nel salvataggio dell\'immagine' });
-                        }
-                        res.status(201).json({ message: 'Categoria creata con successo', categoryID });
-                    }
-                );
-            } else {
-                res.status(201).json({ message: 'Categoria creata con successo', categoryID });
-            }
+    // Accetta sia JSON con "image_path" (immagine già caricata in precedenza)
+    // sia multipart/form-data con il file nel campo "image" (una sola immagine per categoria).
+    uploadCategory.single('image')(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.status(400).json({ error: uploadErr.message });
         }
-    );
+
+        const { category } = req.body;
+        const image_path = req.file ? req.file.filename : req.body.image_path;
+
+        if (!category) {
+            return res.status(400).json({ error: 'category è obbligatorio' });
+        }
+
+        connection.query(
+            'INSERT INTO categories (category) VALUES (?)',
+            [category],
+            (error, result) => {
+                if (error) {
+                    console.error('Errore durante l\'esecuzione della query:', error);
+                    return res.status(500).json({ error: 'Errore durante l\'inserimento della categoria' });
+                }
+
+                const categoryID = result.insertId;
+
+                if (image_path) {
+                    connection.query(
+                        'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
+                        [image_path, categoryID],
+                        (error) => {
+                            if (error) {
+                                console.error('Errore durante l\'esecuzione della query:', error);
+                                return res.status(500).json({ error: 'Categoria creata ma errore nel salvataggio dell\'immagine' });
+                            }
+                            res.status(201).json({ message: 'Categoria creata con successo', categoryID, image: buildCategoryImageUrl(req, image_path) });
+                        }
+                    );
+                } else {
+                    res.status(201).json({ message: 'Categoria creata con successo', categoryID });
+                }
+            }
+        );
+    });
 });
 
 router.put('/categories/:categoryID', (req, res) => {
-    const categoryID = req.params.categoryID;
-    const { category, image_path } = req.body;
-
-    if (!category) {
-        return res.status(400).json({ error: 'category è obbligatorio' });
-    }
-
-    connection.query(
-        'UPDATE categories SET category = ? WHERE ID = ?',
-        [category, categoryID],
-        (error, result) => {
-            if (error) {
-                console.error('Errore durante l\'esecuzione della query:', error);
-                return res.status(500).json({ error: 'Errore durante l\'aggiornamento della categoria' });
-            }
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Categoria non trovata' });
-            }
-
-            if (image_path) {
-                connection.query(
-                    'SELECT ID FROM category_images WHERE categoryID = ? LIMIT 1',
-                    [categoryID],
-                    (imgError, imgResults) => {
-                        if (imgError) {
-                            console.error('Errore durante la verifica dell\'immagine:', imgError);
-                            return res.json({ message: 'Categoria aggiornata con successo' });
-                        }
-
-                        if (imgResults.length > 0) {
-                            connection.query(
-                                'UPDATE category_images SET image_path = ? WHERE ID = ?',
-                                [image_path, imgResults[0].ID],
-                                (updateImgErr) => {
-                                    if (updateImgErr) {
-                                        console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
-                                    }
-                                    res.json({ message: 'Categoria e immagine aggiornate con successo' });
-                                }
-                            );
-                        } else {
-                            connection.query(
-                                'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
-                                [image_path, categoryID],
-                                (insertImgErr) => {
-                                    if (insertImgErr) {
-                                        console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
-                                    }
-                                    res.json({ message: 'Categoria e immagine aggiornate con successo' });
-                                }
-                            );
-                        }
-                    }
-                );
-            } else {
-                res.json({ message: 'Categoria aggiornata con successo' });
-            }
+    // Multipart con file in "image": sostituisce l'immagine della categoria.
+    // JSON con "image_path": stesso comportamento, con un filename già caricato.
+    uploadCategory.single('image')(req, res, (uploadErr) => {
+        if (uploadErr) {
+            return res.status(400).json({ error: uploadErr.message });
         }
-    );
+
+        const categoryID = req.params.categoryID;
+        const { category } = req.body;
+        const image_path = req.file ? req.file.filename : req.body.image_path;
+
+        if (!category) {
+            return res.status(400).json({ error: 'category è obbligatorio' });
+        }
+
+        connection.query(
+            'UPDATE categories SET category = ? WHERE ID = ?',
+            [category, categoryID],
+            (error, result) => {
+                if (error) {
+                    console.error('Errore durante l\'esecuzione della query:', error);
+                    return res.status(500).json({ error: 'Errore durante l\'aggiornamento della categoria' });
+                }
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({ error: 'Categoria non trovata' });
+                }
+
+                if (image_path) {
+                    connection.query(
+                        'SELECT ID FROM category_images WHERE categoryID = ? LIMIT 1',
+                        [categoryID],
+                        (imgError, imgResults) => {
+                            if (imgError) {
+                                console.error('Errore durante la verifica dell\'immagine:', imgError);
+                                return res.json({ message: 'Categoria aggiornata con successo' });
+                            }
+
+                            if (imgResults.length > 0) {
+                                connection.query(
+                                    'UPDATE category_images SET image_path = ? WHERE ID = ?',
+                                    [image_path, imgResults[0].ID],
+                                    (updateImgErr) => {
+                                        if (updateImgErr) {
+                                            console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
+                                        }
+                                        res.json({ message: 'Categoria e immagine aggiornate con successo', image: buildCategoryImageUrl(req, image_path) });
+                                    }
+                                );
+                            } else {
+                                connection.query(
+                                    'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
+                                    [image_path, categoryID],
+                                    (insertImgErr) => {
+                                        if (insertImgErr) {
+                                            console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
+                                        }
+                                        res.json({ message: 'Categoria e immagine aggiornate con successo', image: buildCategoryImageUrl(req, image_path) });
+                                    }
+                                );
+                            }
+                        }
+                    );
+                } else {
+                    res.json({ message: 'Categoria aggiornata con successo' });
+                }
+            }
+        );
+    });
 });
 
 //#endregion
