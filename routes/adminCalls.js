@@ -268,7 +268,7 @@ router.get('/products', (req, res) => { //  /products?categoryID=1
         SELECT 
             products.ID, products.name, products.price, categories.category AS categoryName, products.productID
         FROM products
-        INNER JOIN categories ON products.categoryID = categories.ID`
+        LEFT JOIN categories ON products.categoryID = categories.ID`
     connection.query(sql, (error, results, fields) => {
         if (error) {
             console.error('Errore durante l\'esecuzione della query:', error);
