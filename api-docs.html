@@ -1477,10 +1477,15 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Crea un nuovo prodotto nel catalogo e, se fornito <code>image_path</code>, ne collega subito l'immagine.</p>
+                    <p class="endpoint-summary">Crea un nuovo prodotto nel catalogo. Supporta due modalità per l'immagine: caricarla direttamente nella stessa richiesta, oppure riferire un file già caricato in precedenza.</p>
+
+                    <div class="callout-box">
+                        <strong>Modalità 1 — multipart/form-data (consigliata):</strong> invia i campi come form-data con il file nel campo <code>image</code>. Il server lo salva e collega automaticamente il filename al prodotto appena creato.<br><br>
+                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già caricato in precedenza (es. tramite <code>POST /adm/upload</code>).
+                    </div>
 
                     <div class="params-section">
-                        <div class="params-title">Body JSON Richiesto</div>
+                        <div class="params-title">Body (multipart/form-data oppure application/json)</div>
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
@@ -1488,9 +1493,19 @@
                                 <tr><td><span class="field-name">price</span> <span class="badge-required">*</span></td><td>number</td><td>Prezzo (es. <code>49.90</code>)</td></tr>
                                 <tr><td><span class="field-name">description</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Descrizione dettagliata</td></tr>
                                 <tr><td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID della categoria di appartenenza</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Nome file immagine (es. <code>prodotto.jpg</code>)</td></tr>
+                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: file immagine da caricare (max 5MB)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome di un file immagine già caricato</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 201 Created (con immagine)</span></div>
+                        <pre><code>{
+  "message": "Prodotto creato con successo",
+  "productID": 42,
+  "image": "https://internopuro.alwaysdata.net/img/prods/1792068550189-357119590.png"
+}</code></pre>
                     </div>
                 </div>
             </article>

@@ -173,7 +173,7 @@ router.post('/carts', (req, res) => {
 router.delete('/carts/:productID', (req, res) => {
     const userID = req.user.ID;
     const productID = req.params.productID;
-    const { quantity } = req.body;
+    const { quantity } = req.body || {};
 
     if (quantity !== undefined && (isNaN(quantity) || quantity < 1)) {
         return res.status(400).json({ error: 'quantity deve essere un numero maggiore o uguale a 1' });
