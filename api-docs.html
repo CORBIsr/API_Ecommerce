@@ -1840,12 +1840,15 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Modifica una categoria. Stesso schema di <code>PUT /adm/products/:productID</code>, con l'unica differenza che una categoria ha una sola immagine (campo <code>image</code> singolo, non un array).</p>
+                    <p class="endpoint-summary">Modifica una categoria. A differenza dei prodotti (che hanno una galleria di immagini), una categoria ha <strong>una sola immagine</strong>: non può essere rimossa autonomamente, solo sostituita.</p>
 
                     <div class="callout-box">
-                        <strong>Modalità 1 — multipart/form-data:</strong> un file nel campo <code>image</code> <strong>sostituisce</strong> l'immagine esistente (o ne crea una se non c'era).<br><br>
-                        <strong>Modalità 2 — application/json:</strong> <code>image_path</code> sostituisce l'immagine esistente con un filename già caricato — comportamento storico.<br><br>
-                        <strong>Rimozione immagine:</strong> <code>deleteImageIDs</code> (array con l'ID di <code>category_images</code>, al massimo uno per categoria) rimuove l'immagine senza sostituirla — funziona in entrambe le modalità ed è indipendente da un eventuale nuovo upload nella stessa richiesta. Un ID che non appartiene a questa categoria viene ignorato silenziosamente; la risposta riporta solo l'ID effettivamente rimosso.
+                        <strong>Modalità 1 — multipart/form-data:</strong> un file nel campo <code>image</code> <strong>sostituisce</strong> l'immagine esistente (o ne crea una se non c'era). Il file precedente viene <strong>eliminato automaticamente dal server</strong>.<br><br>
+                        <strong>Modalità 2 — application/json:</strong> <code>image_path</code> sostituisce l'immagine esistente con un filename già caricato — stesso comportamento, stessa eliminazione automatica del vecchio file.
+                    </div>
+
+                    <div class="callout-box">
+                        <strong>Nota:</strong> non esiste un modo per rimuovere l'immagine di una categoria senza fornirne una nuova — una categoria non può restare senza immagine. Per sostituirla basta inviare <code>image</code> o <code>image_path</code> insieme al nome aggiornato.
                     </div>
 
                     <div class="params-section">
@@ -1863,31 +1866,23 @@
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
                                 <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria aggiornata</td></tr>
-                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: nuova immagine, sostituisce quella esistente</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome file immagine, sostituisce quella esistente</td></tr>
-                                <tr><td><span class="field-name">deleteImageIDs</span> <span class="badge-optional">opzionale</span></td><td>number[]</td><td>ID (<code>category_images.ID</code>) dell'immagine da rimuovere</td></tr>
+                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: nuova immagine, sostituisce quella esistente (il vecchio file viene eliminato)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome file immagine, sostituisce quella esistente (il vecchio file viene eliminato)</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="code-container">
-                        <div class="code-header"><span>Esempio Body (modalità JSON, sostituzione)</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <div class="code-header"><span>Esempio Body (modalità JSON)</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
                         <pre><code>{
   "category": "Zona Giorno",
   "image_path": "zona_giorno.jpg"
 }</code></pre>
                     </div>
                     <div class="code-container">
-                        <div class="code-header"><span>Esempio Body (rimozione immagine)</span><button class="btn-copy" onclick="copySnippet(this)">Copia</button></div>
+                        <div class="code-header"><span>Risposta 200 OK (con sostituzione immagine)</span></div>
                         <pre><code>{
-  "category": "Zona Giorno",
-  "deleteImageIDs": [8]
-}</code></pre>
-                    </div>
-                    <div class="code-container">
-                        <div class="code-header"><span>Risposta 200 OK (con rimozione immagine)</span></div>
-                        <pre><code>{
-  "message": "Categoria aggiornata con successo",
-  "deletedImageIDs": [8]
+  "message": "Categoria e immagine aggiornate con successo",
+  "image": "https://internopuro.alwaysdata.net/img/cats/zona_giorno.jpg"
 }</code></pre>
                     </div>
                 </div>

@@ -57,7 +57,16 @@ function createUploader(dirEnvVar, baseUrlEnvVar, localSubfolder) {
         return filenames.map(filename => buildImageUrl(req, filename));
     }
 
-    return { upload, buildImageUrl, buildImageUrls };
+    function deleteImage(filename) {
+        if (!filename) return;
+        fs.unlink(path.join(uploadDir, filename), (err) => {
+            if (err && err.code !== 'ENOENT') {
+                console.error(`Impossibile eliminare il file "${filename}" da "${uploadDir}":`, err.message);
+            }
+        });
+    }
+
+    return { upload, buildImageUrl, buildImageUrls, deleteImage };
 }
 
 module.exports = {

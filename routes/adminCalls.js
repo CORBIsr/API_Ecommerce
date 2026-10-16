@@ -4,7 +4,7 @@ const router = express.Router();
 const connection = require('../config/db');
 const {
     products: { upload, buildImageUrl, buildImageUrls },
-    categories: { upload: uploadCategory, buildImageUrl: buildCategoryImageUrl }
+    categories: { upload: uploadCategory, buildImageUrl: buildCategoryImageUrl, deleteImage: deleteCategoryImage }
 } = require('../middleware/upload');
 
 //#region users
@@ -585,11 +585,10 @@ router.post('/categories', (req, res) => {
 });
 
 router.put('/categories/:categoryID', (req, res) => {
-    // Stesso schema di PUT /products/:productID, con l'unica differenza che una
-    // categoria ha una sola immagine (campo "image" singolo, non "images" array).
-    // Multipart con file in "image": sostituisce l'immagine della categoria.
-    // "deleteImageIDs": rimuove l'immagine della categoria senza sostituirla.
-    // JSON con "image_path": stesso comportamento di sostituzione, con un filename già caricato.
+    // Una categoria ha una sola immagine (campo "image" singolo, non un array come i prodotti).
+    // Multipart con file in "image" (o JSON con "image_path"): sostituisce l'immagine esistente
+    // ed elimina automaticamente dal server il file precedente. Non esiste un modo per rimuovere
+    // l'immagine senza fornirne una nuova: l'unica immagine di una categoria non può restare vuota.
     uploadCategory.single('image')(req, res, (uploadErr) => {
         if (uploadErr) {
             return res.status(400).json({ error: uploadErr.message });
@@ -601,14 +600,6 @@ router.put('/categories/:categoryID', (req, res) => {
 
         if (!category) {
             return res.status(400).json({ error: 'category è obbligatorio' });
-        }
-
-        // Normalizza deleteImageIDs in un array di interi, sia che arrivi come array JSON
-        // sia come campo/i ripetuti di un form multipart.
-        let deleteImageIDs = [];
-        if (req.body.deleteImageIDs !== undefined) {
-            const raw = Array.isArray(req.body.deleteImageIDs) ? req.body.deleteImageIDs : [req.body.deleteImageIDs];
-            deleteImageIDs = raw.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
         }
 
         connection.query(
@@ -623,82 +614,47 @@ router.put('/categories/:categoryID', (req, res) => {
                     return res.status(404).json({ error: 'Categoria non trovata' });
                 }
 
-                const applyImageChanges = () => {
-                    if (image_path) {
-                        connection.query(
-                            'SELECT ID FROM category_images WHERE categoryID = ? LIMIT 1',
-                            [categoryID],
-                            (imgError, imgResults) => {
-                                if (imgError) {
-                                    console.error('Errore durante la verifica dell\'immagine:', imgError);
-                                    return res.json({ message: 'Categoria aggiornata con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
-                                }
+                if (!image_path) {
+                    return res.json({ message: 'Categoria aggiornata con successo' });
+                }
 
-                                if (imgResults.length > 0) {
-                                    connection.query(
-                                        'UPDATE category_images SET image_path = ? WHERE ID = ?',
-                                        [image_path, imgResults[0].ID],
-                                        (updateImgErr) => {
-                                            if (updateImgErr) {
-                                                console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
-                                            }
-                                            res.json({ message: 'Categoria e immagine aggiornate con successo', image: buildCategoryImageUrl(req, image_path), ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
-                                        }
-                                    );
-                                } else {
-                                    connection.query(
-                                        'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
-                                        [image_path, categoryID],
-                                        (insertImgErr) => {
-                                            if (insertImgErr) {
-                                                console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
-                                            }
-                                            res.json({ message: 'Categoria e immagine aggiornate con successo', image: buildCategoryImageUrl(req, image_path), ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
-                                        }
-                                    );
-                                }
-                            }
-                        );
-                    } else {
-                        res.json({ message: 'Categoria aggiornata con successo', ...(deleteImageIDs.length > 0 && { deletedImageIDs: deleteImageIDs }) });
-                    }
-                };
+                connection.query(
+                    'SELECT ID, image_path FROM category_images WHERE categoryID = ? LIMIT 1',
+                    [categoryID],
+                    (imgError, imgResults) => {
+                        if (imgError) {
+                            console.error('Errore durante la verifica dell\'immagine:', imgError);
+                            return res.json({ message: 'Categoria aggiornata con successo' });
+                        }
 
-                if (deleteImageIDs.length > 0) {
-                    // Verifica prima quali ID appartengono davvero a questa categoria, così la
-                    // risposta riporta solo l'immagine effettivamente rimossa (non quelle di
-                    // altre categorie, bloccate dallo scoping su categoryID).
-                    connection.query(
-                        'SELECT ID FROM category_images WHERE categoryID = ? AND ID IN (?)',
-                        [categoryID, deleteImageIDs],
-                        (selError, matchingRows) => {
-                            if (selError) {
-                                console.error('Errore durante la verifica dell\'immagine da rimuovere:', selError);
-                                return res.status(500).json({ error: 'Errore durante la rimozione dell\'immagine' });
-                            }
-
-                            deleteImageIDs = matchingRows.map(row => row.ID);
-
-                            if (deleteImageIDs.length === 0) {
-                                return applyImageChanges();
-                            }
-
+                        if (imgResults.length > 0) {
+                            const oldImagePath = imgResults[0].image_path;
                             connection.query(
-                                'DELETE FROM category_images WHERE categoryID = ? AND ID IN (?)',
-                                [categoryID, deleteImageIDs],
-                                (delError) => {
-                                    if (delError) {
-                                        console.error('Errore durante la rimozione dell\'immagine:', delError);
-                                        return res.status(500).json({ error: 'Errore durante la rimozione dell\'immagine' });
+                                'UPDATE category_images SET image_path = ? WHERE ID = ?',
+                                [image_path, imgResults[0].ID],
+                                (updateImgErr) => {
+                                    if (updateImgErr) {
+                                        console.error('Errore durante l\'aggiornamento dell\'immagine:', updateImgErr);
+                                    } else if (oldImagePath && oldImagePath !== image_path) {
+                                        deleteCategoryImage(oldImagePath);
                                     }
-                                    applyImageChanges();
+                                    res.json({ message: 'Categoria e immagine aggiornate con successo', image: buildCategoryImageUrl(req, image_path) });
+                                }
+                            );
+                        } else {
+                            connection.query(
+                                'INSERT INTO category_images (image_path, categoryID) VALUES (?, ?)',
+                                [image_path, categoryID],
+                                (insertImgErr) => {
+                                    if (insertImgErr) {
+                                        console.error('Errore durante l\'inserimento dell\'immagine:', insertImgErr);
+                                    }
+                                    res.json({ message: 'Categoria e immagine aggiornate con successo', image: buildCategoryImageUrl(req, image_path) });
                                 }
                             );
                         }
-                    );
-                } else {
-                    applyImageChanges();
-                }
+                    }
+                );
             }
         );
     });
