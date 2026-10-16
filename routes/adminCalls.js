@@ -328,7 +328,9 @@ router.post('/products', (req, res) => {
             return res.status(400).json({ error: uploadErr.message });
         }
 
-        const { name, description, price, active, categoryID } = req.body;
+        const { name, description, price, categoryID } = req.body;
+        // "active" è opzionale: se non inviato, il prodotto viene creato attivo (comportamento storico).
+        const active = req.body.active !== undefined ? req.body.active : 1;
         const uploadedFiles = req.files || [];
         const imagePaths = uploadedFiles.length > 0
             ? uploadedFiles.map(file => file.filename)
@@ -402,7 +404,7 @@ router.put('/products/:productID', (req, res) => {
         }
 
         const productID = req.params.productID;
-        const { name, description, price, categoryID, image_path } = req.body;
+        const { name, description, price, active, categoryID, image_path } = req.body;
         const uploadedFiles = req.files || [];
 
         if (!name || price === undefined || price === '') {
@@ -419,8 +421,8 @@ router.put('/products/:productID', (req, res) => {
         }
 
         connection.query(
-            'UPDATE products SET name = ?, description = ?, price = ?, categoryID = ? WHERE ID = ? AND active = 1',
-            [name, description || null, price, categoryID || null, productID],
+            'UPDATE products SET name = ?, description = ?, price = ?, active = ?, categoryID = ? WHERE ID = ?',
+            [name, description || null, price, active || 1, categoryID || null, productID],
             (error, result) => {
                 if (error) {
                     console.error('Errore durante l\'esecuzione della query:', error);
