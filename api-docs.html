@@ -706,10 +706,6 @@
   ]
 }</code></pre>
                     </div>
-
-                    <div class="callout-box">
-                        <strong>Bug noto:</strong> per un prodotto senza nessuna immagine collegata, <code>images</code> contiene attualmente una voce fasulla <code>{ "ID": null, "path": ".../null" }</code> invece di un array vuoto (effetto collaterale della <code>LEFT JOIN</code> con <code>products_images</code>).
-                    </div>
                 </div>
             </article>
 
@@ -1709,7 +1705,7 @@
                     </div>
                 </div>
                 <div class="api-card-body">
-                    <p class="endpoint-summary">Modifica i dati del prodotto. Supporta due modalità per aggiungere immagini, più un meccanismo indipendente per rimuoverle dalla galleria.</p>
+                    <p class="endpoint-summary">Modifica i dati del prodotto, incluso lo stato <code>active</code> — funziona anche su prodotti attualmente disattivati (in precedenza restituiva <code>404</code> su un prodotto disabilitato; ora è possibile modificarlo e anche riattivarlo da qui). Supporta due modalità per aggiungere immagini, più un meccanismo indipendente per rimuoverle dalla galleria.</p>
 
                     <div class="callout-box">
                         <strong>Modalità 1 — multipart/form-data:</strong> uno o più file nel campo <code>images</code> (max 5) vengono caricati e <strong>aggiunti</strong> alle immagini già collegate al prodotto (non le sostituiscono).<br><br>
@@ -1722,7 +1718,7 @@
                         <table class="param-table">
                             <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
-                                <tr><td><span class="field-name">productID</span> <span class="badge-required">*</span></td><td>number</td><td>ID del prodotto da aggiornare</td></tr>
+                                <tr><td><span class="field-name">productID</span> <span class="badge-required">*</span></td><td>number</td><td>ID del prodotto da aggiornare (anche se disattivato)</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1734,6 +1730,7 @@
                                 <tr><td><span class="field-name">name</span> <span class="badge-required">*</span></td><td>string</td><td>Nome del prodotto</td></tr>
                                 <tr><td><span class="field-name">price</span> <span class="badge-required">*</span></td><td>number</td><td>Prezzo aggiornato</td></tr>
                                 <tr><td><span class="field-name">description</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Descrizione</td></tr>
+                                <tr><td><span class="field-name">active</span> <span class="badge-optional">opzionale</span></td><td>0 / 1</td><td>Stato del prodotto. Se omesso resta <code>1</code> (attivo)</td></tr>
                                 <tr><td><span class="field-name">categoryID</span> <span class="badge-optional">opzionale</span></td><td>number</td><td>ID della categoria</td></tr>
                                 <tr><td><span class="field-name">images</span> <span class="badge-optional">opzionale</span></td><td>file[]</td><td>Solo modalità multipart: una o più immagini da aggiungere (max 5)</td></tr>
                                 <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome file immagine, sostituisce quella esistente (es. <code>tavolo_lux.jpg</code>)</td></tr>

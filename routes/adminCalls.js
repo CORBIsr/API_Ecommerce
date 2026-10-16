@@ -404,7 +404,11 @@ router.put('/products/:productID', (req, res) => {
         }
 
         const productID = req.params.productID;
-        const { name, description, price, active, categoryID, image_path } = req.body;
+        const { name, description, price, categoryID, image_path } = req.body;
+        // "active" è opzionale: se non inviato resta 1 (attivo). Non si può usare
+        // "active || 1" perché 0 è falsy in JS e verrebbe sempre forzato a 1
+        // (bug: ignorava silenziosamente active:0 quando arrivava come numero via JSON).
+        const active = req.body.active !== undefined ? req.body.active : 1;
         const uploadedFiles = req.files || [];
 
         if (!name || price === undefined || price === '') {
@@ -422,7 +426,7 @@ router.put('/products/:productID', (req, res) => {
 
         connection.query(
             'UPDATE products SET name = ?, description = ?, price = ?, active = ?, categoryID = ? WHERE ID = ?',
-            [name, description || null, price, active || 1, categoryID || null, productID],
+            [name, description || null, price, active, categoryID || null, productID],
             (error, result) => {
                 if (error) {
                     console.error('Errore durante l\'esecuzione della query:', error);
