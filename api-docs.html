@@ -1799,8 +1799,10 @@
                     <p class="endpoint-summary">Crea una nuova categoria merceologica con eventuale immagine associata (una sola immagine per categoria).</p>
 
                     <div class="callout-box">
-                        <strong>Modalità 1 — multipart/form-data:</strong> invia i campi come form-data con il file nel campo <code>image</code>.<br><br>
-                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già presente nella cartella delle immagini categoria.<br><br>
+                        <strong>Modalità 1 — multipart/form-data:</strong> invia i campi come form-data con il file nel campo <code>image</code>. Il server lo salva sul disco con un nome generato automaticamente (timestamp + numero casuale) e usa quel filename come <code>image_path</code>.<br><br>
+                        <strong>Modalità 2 — application/json:</strong> passa <code>image_path</code> con il nome di un file già presente nella cartella delle immagini categoria (es. caricato in precedenza con un'altra chiamata).<br><br>
+                        <strong>Se arrivano entrambi:</strong> una richiesta multipart con un file in <code>image</code> ha sempre la precedenza sul campo <code>image_path</code>, che in quel caso viene ignorato.<br><br>
+                        <strong>Nessuna immagine:</strong> <code>image</code> e <code>image_path</code> sono entrambi facoltativi — se non viene inviato nessuno dei due, la categoria viene creata senza immagine (si potrà aggiungere in seguito con la <code>PUT</code>).<br><br>
                         <strong>Cartella dedicata:</strong> a differenza dei prodotti, le immagini delle categorie vengono salvate in una cartella separata, configurata con le variabili d'ambiente <code>CATEGORY_UPLOAD_DIR</code> (es. <code>/www/img/cats</code>) e <code>CATEGORY_IMAGE_BASE_URL</code> (es. <code>https://internopuro.alwaysdata.net/img/cats</code>). <code>POST /adm/upload</code> salva invece nella cartella dei <strong>prodotti</strong> e non va usato per le categorie.
                     </div>
 
@@ -1809,9 +1811,9 @@
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
-                                <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria (es. <code>Sedie</code>)</td></tr>
-                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: immagine della categoria (max 5MB)</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome di un file immagine già caricato</td></tr>
+                                <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria (es. <code>Sedie</code>) — se mancante, risposta <code>400</code></td></tr>
+                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: immagine della categoria (max 5MB, ha la precedenza su <code>image_path</code>)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON (o multipart senza file): nome di un file immagine già caricato</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1822,6 +1824,13 @@
   "message": "Categoria creata con successo",
   "categoryID": 17,
   "image": "https://internopuro.alwaysdata.net/img/cats/1792069967457-235906888.png"
+}</code></pre>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 201 Created (senza immagine)</span></div>
+                        <pre><code>{
+  "message": "Categoria creata con successo",
+  "categoryID": 18
 }</code></pre>
                     </div>
                 </div>
@@ -1844,7 +1853,9 @@
 
                     <div class="callout-box">
                         <strong>Modalità 1 — multipart/form-data:</strong> un file nel campo <code>image</code> <strong>sostituisce</strong> l'immagine esistente (o ne crea una se non c'era). Il file precedente viene <strong>eliminato automaticamente dal server</strong>.<br><br>
-                        <strong>Modalità 2 — application/json:</strong> <code>image_path</code> sostituisce l'immagine esistente con un filename già caricato — stesso comportamento, stessa eliminazione automatica del vecchio file.
+                        <strong>Modalità 2 — application/json:</strong> <code>image_path</code> sostituisce l'immagine esistente con un filename già caricato — stesso comportamento, stessa eliminazione automatica del vecchio file.<br><br>
+                        <strong>Se arrivano entrambi:</strong> come nella <code>POST</code>, un file multipart in <code>image</code> ha la precedenza su <code>image_path</code>, che in quel caso viene ignorato.<br><br>
+                        <strong>Nessuna immagine inviata:</strong> se non viene fornito né <code>image</code> né <code>image_path</code>, viene aggiornato solo il nome della categoria e l'immagine esistente resta invariata (nessuna chiamata al database o cancellazione di file).
                     </div>
 
                     <div class="callout-box">
@@ -1856,7 +1867,7 @@
                         <table class="param-table">
                             <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
-                                <tr><td><span class="field-name">categoryID</span> <span class="badge-required">*</span></td><td>number</td><td>ID della categoria da aggiornare</td></tr>
+                                <tr><td><span class="field-name">categoryID</span> <span class="badge-required">*</span></td><td>number</td><td>ID della categoria da aggiornare — se non esiste, risposta <code>404</code></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1865,9 +1876,9 @@
                         <table class="param-table">
                             <thead><tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr></thead>
                             <tbody>
-                                <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria aggiornata</td></tr>
-                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: nuova immagine, sostituisce quella esistente (il vecchio file viene eliminato)</td></tr>
-                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON: nome file immagine, sostituisce quella esistente (il vecchio file viene eliminato)</td></tr>
+                                <tr><td><span class="field-name">category</span> <span class="badge-required">*</span></td><td>string</td><td>Nome della categoria aggiornata — se mancante, risposta <code>400</code> (va sempre inviato, anche se si vuole cambiare solo l'immagine)</td></tr>
+                                <tr><td><span class="field-name">image</span> <span class="badge-optional">opzionale</span></td><td>file</td><td>Solo modalità multipart: nuova immagine, sostituisce quella esistente (il vecchio file viene eliminato, ha la precedenza su <code>image_path</code>)</td></tr>
+                                <tr><td><span class="field-name">image_path</span> <span class="badge-optional">opzionale</span></td><td>string</td><td>Solo modalità JSON (o multipart senza file): nome file immagine, sostituisce quella esistente (il vecchio file viene eliminato)</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1883,6 +1894,12 @@
                         <pre><code>{
   "message": "Categoria e immagine aggiornate con successo",
   "image": "https://internopuro.alwaysdata.net/img/cats/zona_giorno.jpg"
+}</code></pre>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK (solo nome, nessuna immagine inviata)</span></div>
+                        <pre><code>{
+  "message": "Categoria aggiornata con successo"
 }</code></pre>
                     </div>
                 </div>
