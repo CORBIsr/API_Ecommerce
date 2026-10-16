@@ -21,7 +21,9 @@ router.get('/products', (req, res) => { //  /products?categoryID=1
             res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
         } else {
             results.forEach(prod => {
-                prod.image = `https://internopuro.alwaysdata.net/img/prods/${prod.image}`;
+                if (prod.image !== null) {
+                    prod.image = `https://internopuro.alwaysdata.net/img/prods/${prod.image}`;
+                }
             });
             res.json(results);
         }
@@ -56,10 +58,12 @@ router.get('/products/:productID', (req, res) => {
                 images: []
             }
             results.forEach(result => {
-                prod.images.push({
-                    ID: result.imageID,
-                    path: `https://internopuro.alwaysdata.net/img/prods/${result.image}`
-                })
+                if (result.image !== null) {
+                    prod.images.push({
+                        ID: result.imageID,
+                        path: `https://internopuro.alwaysdata.net/img/prods/${result.image}`
+                    })
+                }
             });
             res.json(prod);
         }

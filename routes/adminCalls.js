@@ -328,7 +328,7 @@ router.post('/products', (req, res) => {
             return res.status(400).json({ error: uploadErr.message });
         }
 
-        const { name, description, price, categoryID } = req.body;
+        const { name, description, price, active, categoryID } = req.body;
         const uploadedFiles = req.files || [];
         const imagePaths = uploadedFiles.length > 0
             ? uploadedFiles.map(file => file.filename)
@@ -339,8 +339,8 @@ router.post('/products', (req, res) => {
         }
 
         connection.query(
-            'INSERT INTO products (name, description, price, categoryID) VALUES (?, ?, ?, ?)',
-            [name, description || null, price, categoryID || null],
+            'INSERT INTO products (name, description, price, active, categoryID) VALUES (?, ?, ?, ?, ?)',
+            [name, description || null, price, active, categoryID || null],
             (error, result) => {
                 if (error) {
                     console.error('Errore durante l\'esecuzione della query:', error);
