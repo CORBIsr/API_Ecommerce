@@ -75,7 +75,7 @@ router.get('/carts', (req, res) => {
                         id: p.id,
                         name: p.name,
                         price: p.price,
-                        image: `https://internopuro.alwaysdata.net/img/prods/${p.image}`,
+                        image: p.image !== null ? `https://internopuro.alwaysdata.net/img/prods/${p.image}` : "",
                         quantity: p.quantity,
                         accessories: []
                     }
