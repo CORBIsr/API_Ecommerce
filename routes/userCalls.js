@@ -443,17 +443,36 @@ router.delete('/orders/:orderID', (req, res) => {
     const orderID = req.params.orderID;
 
     connection.query(
-        'UPDATE orders SET active = 0 WHERE ID = ? AND userID = ?',
+        'SELECT date FROM orders WHERE ID = ? AND userID = ?',
         [orderID, userID],
-        (error, result) => {
+        (error, results) => {
             if (error) {
                 console.error('Errore durante l\'esecuzione della query:', error);
-                return res.status(500).json({ error: 'Errore durante la disattivazione dell\'ordine' });
+                return res.status(500).json({ error: 'Errore durante la verifica dell\'ordine' });
             }
-            if (result.affectedRows === 0) {
+            if (results.length === 0) {
                 return res.status(404).json({ error: 'Ordine non trovato o non autorizzato' });
             }
-            res.json({ message: 'Ordine disattivato con successo' });
+
+            const minutesPassed = (Date.now() - new Date(results[0].date).getTime()) / 60000;
+            if (minutesPassed > 30) {
+                return res.status(403).json({ error: 'Non è più possibile annullare l\'ordine: sono passati più di 30 minuti dall\'acquisto' });
+            }
+
+            connection.query(
+                'UPDATE orders SET statusID = 6 WHERE ID = ? AND userID = ?',
+                [orderID, userID],
+                (error, result) => {
+                    if (error) {
+                        console.error('Errore durante l\'esecuzione della query:', error);
+                        return res.status(500).json({ error: 'Errore durante l\'annullamento dell\'ordine' });
+                    }
+                    if (result.affectedRows === 0) {
+                        return res.status(404).json({ error: 'Ordine non trovato o non autorizzato' });
+                    }
+                    res.json({ message: 'Ordine annullato con successo' });
+                }
+            );
         }
     );
 
