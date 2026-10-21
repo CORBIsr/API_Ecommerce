@@ -1082,6 +1082,49 @@
                 </div>
             </article>
 
+            <!-- DELETE /api/user/orders/:orderID -->
+            <article class="api-card" id="user-cancel-order">
+                <div class="api-card-header">
+                    <div class="endpoint-wrapper">
+                        <span class="method-badge method-DELETE">DELETE</span>
+                        <span class="endpoint-path">/api/user/orders/<span class="param">:orderID</span></span>
+                    </div>
+                    <div class="meta-badges">
+                        <span class="role-pill role-user">Token Richiesto</span>
+                    </div>
+                </div>
+                <div class="api-card-body">
+                    <p class="endpoint-summary">Annulla un ordine dell'utente, impostandone lo stato su "Annullato" (<code>statusID = 6</code>).</p>
+
+                    <div class="callout-box">
+                        <strong>Limite di 30 minuti:</strong> l'ordine può essere annullato solo entro 30 minuti dalla sua creazione (confrontando l'orario attuale con <code>orders.date</code>). Dopo i 30 minuti la richiesta viene rifiutata con <code>403</code>, senza modificare l'ordine.
+                    </div>
+
+                    <div class="params-section">
+                        <div class="params-title">Path Parameters</div>
+                        <table class="param-table">
+                            <thead><tr><th>Parametro</th><th>Tipo</th><th>Descrizione</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="field-name">orderID</span> <span class="badge-required">*</span></td><td>number</td><td>ID dell'ordine da annullare — deve appartenere all'utente autenticato</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 200 OK</span></div>
+                        <pre><code>{
+  "message": "Ordine annullato con successo"
+}</code></pre>
+                    </div>
+                    <div class="code-container">
+                        <div class="code-header"><span>Risposta 403 Forbidden (oltre i 30 minuti)</span></div>
+                        <pre><code>{
+  "error": "Non è più possibile annullare l'ordine: sono passati più di 30 minuti dall'acquisto"
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
             <!-- POST /api/user/orders -->
             <article class="api-card" id="user-create-order">
                 <div class="api-card-header">
