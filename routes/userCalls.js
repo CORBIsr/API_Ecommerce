@@ -386,12 +386,10 @@ router.post('/orders', (req, res) => {
                             return res.status(400).json({ error: 'Il carrello è vuoto' });
                         }
 
-                        const date = new Date().toISOString().split('T')[0];
-
-                        // Crea l'ordine (statusID 1 = "In attesa di conferma")
+                        // Crea l'ordine (statusID 1 = "In attesa di conferma"), con data e ora assegnate dal database
                         connection.query(
-                            'INSERT INTO orders (userID, statusID, shipping_fee, date, addressID) VALUES (?, 1, ?, ?, ?)',
-                            [userID, shipping_fee, date, addressID],
+                            'INSERT INTO orders (userID, statusID, shipping_fee, date, addressID) VALUES (?, 1, ?, NOW(), ?)',
+                            [userID, shipping_fee, addressID],
                             (error, orderResult) => {
                                 if (error) {
                                     console.error('Errore durante l\'esecuzione della query:', error);
@@ -438,6 +436,27 @@ router.post('/orders', (req, res) => {
             });
         }
     );
+});
+
+router.delete('/orders/:orderID', (req, res) => {
+    const userID = req.user.ID;
+    const orderID = req.params.orderID;
+
+    connection.query(
+        'UPDATE orders SET active = 0 WHERE ID = ? AND userID = ?',
+        [orderID, userID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante la disattivazione dell\'ordine' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Ordine non trovato o non autorizzato' });
+            }
+            res.json({ message: 'Ordine disattivato con successo' });
+        }
+    );
+
 });
 
 //#endregion
