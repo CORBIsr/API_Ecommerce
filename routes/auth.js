@@ -4,8 +4,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const connection = require('../config/db');
+const { loginLimiter } = require('../middleware/rateLimiter');
 
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {

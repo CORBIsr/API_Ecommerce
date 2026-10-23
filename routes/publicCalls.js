@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 
 const connection = require('../config/db');
+const { registerLimiter } = require('../middleware/rateLimiter');
 
 //#region products
 
@@ -112,7 +113,7 @@ router.get('/categories', (req, res) => {
 
 //#region users
 
-router.post('/users', async (req, res) => {
+router.post('/users', registerLimiter, async (req, res) => {
     const { name, surname, username, password } = req.body;
 
     if (!name || !surname || !username || !password) {
