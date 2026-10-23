@@ -12,7 +12,7 @@ const {
 router.get('/users', (req, res) => {
     connection.query(`
         SELECT
-            users.ID, name, surname, roles.role, COUNT(orders.ID) AS n_orders
+            users.ID, name, surname, roles.role, users.creation_date, COUNT(orders.ID) AS n_orders
         FROM users
         INNER JOIN roles ON users.roleID = roles.ID
         LEFT JOIN orders ON users.ID = orders.userID
@@ -73,16 +73,41 @@ router.get('/users/:userID', (req, res) => {
 
 router.delete('/users/:userID', (req, res) => {
     const userID = req.params.userID;
-
-    connection.query('UPDATE users SET roleID = 3 WHERE ID = ?', [userID], (error, results, fields) => {
-        if (error) {
-            console.error('Errore durante l\'esecuzione della query:', error);
-            res.status(500).json({ error: 'Errore durante il recupero dei dati dal database' });
-        } else {
-            res.json({ message: "utente disabilitato" });
+    
+    connection.beginTransaction((err) => {
+        if (err) {
+            console.error('Errore avvio transazione:', err);
+            return res.status(500).json({ error: 'Errore interno del server' });
         }
-    });
 
+        connection.query(`UPDATE users SET roleID = 3, name = 'DELETED USER', surname = 'DELETED USER' WHERE ID = ?`, [userID], (error, result1) => {
+            if (error) {
+                return connection.rollback(() => {
+                    console.error('Errore:', error);
+                    res.status(500).json({ error: 'Errore nella cancellazione dell\'utente.' });
+                });
+            }
+
+            connection.query('DELETE FROM credentials WHERE userID = ?', [userID], (error, result2) => {
+                if (error) {
+                    return connection.rollback(() => {
+                        console.error('Errore:', error);
+                        res.status(500).json({ error: 'Errore nella cancellazione delle credenziali' });
+                    });
+                }
+
+                connection.commit((err) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            console.error('Errore commit:', err);
+                            res.status(500).json({ error: 'Errore interno del server' });
+                        });
+                    }
+                    res.json({ message: "utente disabilitato"});
+                });
+            });
+        });
+    });
 });
 
 router.put('/users/:userID', (req, res) => {

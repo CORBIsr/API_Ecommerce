@@ -42,6 +42,30 @@ router.put('/me', (req, res) => {
     );
 });
 
+router.delete('/me', (req, res) => {
+    const userID = req.user.ID;
+
+    if (+req.user.role === +process.env.OWNER_ROLE) {
+        return res.status(403).json({ error: 'Un owner non può eliminare il proprio account' });
+    }
+
+    // roleID 3 = "DELETED": stesso meccanismo usato da un admin per disabilitare un utente
+    connection.query(
+        'UPDATE users SET roleID = 3 WHERE ID = ?',
+        [userID],
+        (error, result) => {
+            if (error) {
+                console.error('Errore durante l\'esecuzione della query:', error);
+                return res.status(500).json({ error: 'Errore durante l\'eliminazione dell\'account' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Utente non trovato' });
+            }
+            res.json({ message: 'Account eliminato con successo' });
+        }
+    );
+});
+
 //#endregion
 
 //#region cart
@@ -339,10 +363,10 @@ router.get('/orders/:orderID', (req, res) => {
 
 router.post('/orders', (req, res) => {
     const userID = req.user.ID;
-    const { addressID, shipping_fee } = req.body;
+    const { addressID } = req.body;
 
-    if (!addressID || shipping_fee === undefined) {
-        return res.status(400).json({ error: 'id_indirizzo e costo_consegna sono obbligatori' });
+    if (!addressID) {
+        return res.status(400).json({ error: 'id_indirizzo è obbligatorio' });
     }
 
     // Verifica che l'indirizzo appartenga all'utente
@@ -385,6 +409,10 @@ router.post('/orders', (req, res) => {
                         if (items.length === 0) {
                             return res.status(400).json({ error: 'Il carrello è vuoto' });
                         }
+
+                        // Spedizione calcolata dal server, mai dal client: 50€ meno l'1% del totale, gratuita da 5000€ in su
+                        const totalPrice = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+                        const shipping_fee = Math.max(0, Math.round((50 - totalPrice * 0.01) * 100) / 100);
 
                         // Crea l'ordine (statusID 1 = "In attesa di conferma"), con data e ora assegnate dal database
                         connection.query(
