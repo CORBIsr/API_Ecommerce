@@ -40,7 +40,9 @@ app.get('/api/', (req, res) => {
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/assets', express.static(path.join(__dirname, 'public')));
+// Sotto /api perché /assets è già usato dal frontend React per i propri file compilati
+// (il proxy di alwaysdata instraderebbe altrimenti queste richieste al frontend, non a Node)
+app.use('/api/assets', express.static(path.join(__dirname, 'public')));
 
 app.use('/api/public', publicRoutes);
 app.use('/api/user', tokenVerifier, userRoutes);
