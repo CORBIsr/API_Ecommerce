@@ -153,3 +153,5 @@ ecommerce.sql
 ecommerce-2.sql
 test-client.html
 test-client.js
+.claude/launch.json
+openapi.yaml
