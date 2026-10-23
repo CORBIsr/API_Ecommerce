@@ -2,23 +2,35 @@ require('dotenv').config();
 const express = require('express');
 const db = require('./config/db');
 const cors = require('cors'); // cors
+const helmet = require('helmet');
 const app = express();
 const path = require('path');
 
-app.use(cors());// cors
-app.use(express.json({
-    // Conserva il corpo grezzo della richiesta: serve al webhook GitHub per
-    // verificare la firma HMAC prima che express.json() lo trasformi in oggetto.
-    verify: (req, res, buf) => {
-        req.rawBody = buf;
+app.disable('x-powered-by');
+
+// Origini del frontend ammesse a chiamare le API da browser (credenziali escluse: il token va nell'header Authorization, non nei cookie)
+const allowedOrigins = [
+    'https://internopuro.alwaysdata.net',
+    'http://localhost:5173'
+];
+app.use(cors({ origin: allowedOrigins }));
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            // CSS e JS di api-docs.html sono file esterni (/assets), niente inline da permettere
+            "style-src": ["'self'"]
+        }
     }
 }));
+
+app.use(express.json());
 
 const publicRoutes = require('./routes/publicCalls');
 const userRoutes = require('./routes/userCalls');
 const adminRoutes = require('./routes/adminCalls');
 const authRoutes = require('./routes/auth');
-const webhookRoutes = require('./routes/webhook');
 
 const tokenVerifier = require('./middleware/auth')
 const isInRole = require('./middleware/roles');
@@ -28,12 +40,12 @@ app.get('/api/', (req, res) => {
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/assets', express.static(path.join(__dirname, 'public')));
 
 app.use('/api/public', publicRoutes);
 app.use('/api/user', tokenVerifier, userRoutes);
 app.use('/api/adm', tokenVerifier, isInRole(+process.env.ADMIN_ROLE, +process.env.OWNER_ROLE), adminRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/webhook', webhookRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
